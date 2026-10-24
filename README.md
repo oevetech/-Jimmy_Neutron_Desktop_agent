@@ -31,6 +31,12 @@ O pet se atualiza sozinho quando sai uma versão nova (dá para desligar em ⚙�
   ele pode até 🖱️ buscar o ponteiro do mouse para o Jimmy!
 - 🖱️ **Clique rápido no Jimmy**: menu com jogo de bolinha (cada arremesso mais longe), novo lembrete,
   timer, nota rápida, "decida por mim" e contador de copos d'água.
+- 🕹️ **Modo Game**: o Jimmy pilota o foguete com a pistola de laser contra ondas de meteoros e alienígenas
+  (blobs, aranhas-robô, cérebros e soldados Yokianos), com o **Rei Goobot** como chefe. O Goddard ajuda de jetpack.
+  **Setas** pilotam, **Espaço** atira, **Enter** solta o redemoinho especial, **P** pausa, **Esc** sai. Tem placar,
+  combo, power-ups e recorde. (Clique no Jimmy → 🎮 Brincar → 🕹️ Modo Game.)
+- 🪐 **Resgate da lhama**: às vezes aparece um planeta no alto da tela com uma lhama perdida; o Carl chega
+  desesperado e o Jimmy voa de foguete para buscar.
 - ☄️ **Chuva de meteoros**: clique nos meteoros antes que caiam (com recorde).
 - ⏳ **Contagem regressiva**: cadastre datas e o Jimmy avisa quantos dias faltam e comemora no dia.
 - 🌬️ Clique no Jimmy enquanto ele desce de paraquedas e uma rajada de vento joga ele de volta pra cima.

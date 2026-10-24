@@ -345,7 +345,12 @@ def tirar_buracos(crop, y0, y1, boca=None):
 
 
 def export(sheet_name, spec):
-    cells, crops = crops_of(os.path.join(BASE, sheet_name), spec.get("sem_baloes", False), spec.get("grade"))
+    if spec.get("inteira"):
+        # A imagem toda é um quadro só (ex.: planeta com nuvens e luas soltas em volta)
+        img = remove_white_bg(Image.open(os.path.join(BASE, sheet_name)))
+        cells, crops = [None], [img.crop(img.getbbox())]
+    else:
+        cells, crops = crops_of(os.path.join(BASE, sheet_name), spec.get("sem_baloes", False), spec.get("grade"))
     # Mesmo tamanho de tela para todos os quadros da folha (mantém a proporção entre eles)
     base = crops
     if spec.get("lado_usados"):
@@ -387,7 +392,8 @@ def export(sheet_name, spec):
             if "buracos" in spec:
                 crop = tirar_buracos(crop, *spec["buracos"], boca=spec.get("boca"))
             canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
-            x = (side - crop.width) // 2
+            # "alinhar": "esquerda" mantém a cauda do foguete parada quando o quadro tem raio/efeito à frente
+            x = 4 if spec.get("alinhar") == "esquerda" else (side - crop.width) // 2
             y = side - crop.height - 4 if anchor == "bottom" else (side - crop.height) // 2
             canvas.alpha_composite(crop, (x, y))
             canvas.save(os.path.join(folder, f"{n:02d}.png"))

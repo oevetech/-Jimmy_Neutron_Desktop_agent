@@ -223,10 +223,28 @@ def bolinha():
     return fade(sweep(420, 260, sec, 0.5) * np.exp(-tt * 22), 0.001, 0.03)
 
 
+def laser():
+    # "Piu" de laser: descida rápida de tom com um pouco de harmônico
+    sec = 0.16
+    tt = t(sec)
+    x = sweep(1800, 400, sec, 0.6) + 0.3 * sweep(3600, 800, sec, 0.6)
+    return fade(x * np.exp(-tt * 14), 0.001, 0.03)
+
+
+def estouro():
+    # Meteoro estourando: ruído grave curto com "crack" no começo
+    sec = 0.35
+    tt = t(sec)
+    ruido = lowpass(rng.standard_normal(len(tt)), 900 * np.exp(-tt * 6) + 120)
+    crack = rng.standard_normal(len(tt)) * np.exp(-tt * 60)
+    return fade((ruido * 1.4 + crack * 0.5) * np.exp(-tt * 9), 0.001, 0.05)
+
+
 SONS = {"explosao": explosao, "decolagem": decolagem, "paraquedas": paraquedas,
         "pouso": pouso, "goddard": goddard, "latido": latido,
         "jetpack_liga": jetpack_liga, "jetpack": jetpack, "ronco": ronco,
-        "aviso": aviso, "brainblast": brainblast, "fogos": fogos, "bolinha": bolinha}
+        "aviso": aviso, "brainblast": brainblast, "fogos": fogos, "bolinha": bolinha,
+        "laser": laser, "estouro": estouro}
 
 if __name__ == "__main__":
     todos = "--todos" in sys.argv
@@ -235,5 +253,5 @@ if __name__ == "__main__":
         if os.path.exists(path) and not todos:
             print(f"{name}.wav já existe (mantido)")
             continue
-        save(name, fn(), peak={"goddard": 0.5, "latido": 0.5, "jetpack": 0.3, "jetpack_liga": 0.6, "ronco": 0.3, "aviso": 0.5, "brainblast": 0.6, "fogos": 0.6, "bolinha": 0.4}.get(name, 0.85))
+        save(name, fn(), peak={"goddard": 0.5, "latido": 0.5, "jetpack": 0.3, "jetpack_liga": 0.6, "ronco": 0.3, "aviso": 0.5, "brainblast": 0.6, "fogos": 0.6, "bolinha": 0.4, "laser": 0.35, "estouro": 0.6}.get(name, 0.85))
         print(f"{name}.wav criado")

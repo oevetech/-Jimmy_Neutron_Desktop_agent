@@ -66,7 +66,7 @@ CONFIG_PADRAO = {"tamanho": 75, "tamanho_goddard": 100, "viagem_min": 1, "viagem
                  "stats": {}, "conquistas": [], "meus_lembretes": [], "tom_noite": True,
                  "invencoes": True, "lhamas": True, "dancar": True,
                  "estacoes": True, "easter_egg": False, "rede": False, "curiosidades": True, "idioma": "pt", "passeios": True,
-                 "goddard_pet": True, "busca_mouse": True, "consertos": True, "divulgar": True, "divulga_prox": 0, "notas": [], "agua_hoje": {}, "gd_stats": {}, "meteoros": True, "meteoros_recorde": 0, "contagens": [],
+                 "goddard_pet": True, "busca_mouse": True, "consertos": True, "resgate_lhama": True, "game_recorde": 0, "divulgar": True, "divulga_prox": 0, "notas": [], "agua_hoje": {}, "gd_stats": {}, "meteoros": True, "meteoros_recorde": 0, "contagens": [],
                  "repo_github": "oevetech/-Jimmy_Neutron_Desktop_agent", "atualizar": True,
                  "atualizar_sozinho": True, "avisou_versao": "",
                  "apps_reagir": True, "apps": {
@@ -211,7 +211,7 @@ def gd_get(k):
 def gd_add(k, n):
     CFG["gd_stats"][k] = max(0.0, min(100.0, gd_get(k) + n))
 
-APP_VERSAO = "1.0"   # suba este número a cada versão publicada no GitHub
+APP_VERSAO = "1.1"   # suba este número a cada versão publicada no GitHub
 
 def versao_tupla(v):
     try: return tuple(int(x) for x in str(v).lstrip("vV").split("."))
@@ -347,7 +347,8 @@ CONQUISTAS = [
     ("aviso10", "avisos", 10, "💧 Saúde em dia"),
     ("inv5", "invencoes", 5, "🧪 Cientista maluco"), ("lhama3", "lhamas", 3, "🦙 Caçador de lhamas"),
     ("danca5", "dancas", 5, "💃 Pé de valsa"), ("passeio5", "passeios", 5, "🛸 Piloto de passeio"),
-    ("cuidado20", "cuidados", 20, "🐶 Dono responsável"), ("conserto5", "consertos", 5, "🔧 Mecânico genial"), ("agua50", "copos", 50, "💧 Hidratado de verdade"), ("ponteiro1", "ponteiros", 1, "🖱️ Cadê meu mouse?"), ("meteoro50", "meteoros", 50, "☄️ Caçador de meteoros"),
+    ("cuidado20", "cuidados", 20, "🐶 Dono responsável"), ("resgate1", "resgates", 1, "🪐 Resgate espacial"), ("game1", "game_partidas", 1, "🕹️ Piloto de combate"),
+    ("ondas10", "game_ondas", 10, "🛡️ Defensor de Retroville"), ("conserto5", "consertos", 5, "🔧 Mecânico genial"), ("agua50", "copos", 50, "💧 Hidratado de verdade"), ("ponteiro1", "ponteiros", 1, "🖱️ Cadê meu mouse?"), ("meteoro50", "meteoros", 50, "☄️ Caçador de meteoros"),
 ]
 
 def stat(nome, n=1):
@@ -532,7 +533,21 @@ EN = {
     "Valeu, Goddard! Agora sim, vou inventar! 🛠️": "Thanks, Goddard! Now I can invent! 🛠️",
     "Opa, você voltou! Pode ficar com o mouse 😅": "Oops, you're back! You can keep the mouse 😅",
     "🖱️ Buscar o ponteiro": "🖱️ Fetch the pointer",
-    "🔧 Consertar o foguete": "🔧 Fix the rocket", "🔧 Consertos": "🔧 Repairs", "🔧 Mecânico genial": "🔧 Genius mechanic",
+    "🔧 Consertar o foguete": "🔧 Fix the rocket", "🪐 Resgatar a lhama do planeta": "🪐 Rescue the llama from the planet",
+    "🪐 Resgate da lhama": "🪐 Llama rescue", "🪐 Resgate espacial": "🪐 Space rescue",
+    "Olha lá em cima! Uma lhama perdida no espaço! 🦙🪐": "Look up there! A llama lost in space! 🦙🪐",
+    "Aquilo é... uma lhama num planeta?! 🦙🪐": "Is that... a llama on a planet?! 🦙🪐",
+    "Segura aí, Carl! Eu busco! 🚀": "Hang on, Carl! I'll get it! 🚀", "Peguei! Segura firme, lhaminha! 🦙": "Got it! Hold on tight, little llama! 🦙",
+    "Jimmy! Minha lhama foi parar naquele planeta! 😱🦙": "Jimmy! My llama ended up on that planet! 😱🦙",
+    "Socorro! A lhama tá no espaço! 🦙🪐": "Help! The llama is in space! 🦙🪐", "Vai, Jimmy! 🙏": "Go, Jimmy! 🙏",
+    "Cuidado com a lhama! 🦙": "Careful with the llama! 🦙", "Lhaminha!! Valeu, Jimmy! 🦙💕": "My llama!! Thanks, Jimmy! 🦙💕",
+    "Você é o melhor, Jimmy! 🦙✨": "You're the best, Jimmy! 🦙✨", "Nunca mais foge, tá? 🦙😭": "Never run away again, okay? 🦙😭", "🕹️ Modo Game": "🕹️ Game mode",
+    "🕹️ Piloto de combate": "🕹️ Combat pilot", "🛡️ Defensor de Retroville": "🛡️ Defender of Retroville",
+    "Escudo! 🛡️": "Shield! 🛡️", "Rei Goobot derrotado! +1500 👑": "King Goobot defeated! +1500 👑", "⚡ BRAIN BLAST! 🌀": "⚡ BRAIN BLAST! 🌀", "Chefe derrotado! +500 🏆": "Boss defeated! +500 🏆",
+    "🛡️ Escudo!": "🛡️ Shield!", "⚡ Tiro triplo!": "⚡ Triple shot!", "❤️ +1 vida!": "❤️ +1 life!", "🌀 Energia!": "🌀 Energy!",
+    "🌀 ENTER!": "🌀 ENTER!", "VAI! 🚀": "GO! 🚀", "⏸️ Pausa (P para voltar)": "⏸️ Paused (P to resume)",
+    "Fim de jogo!": "Game over!", "🏆 Novo recorde!": "🏆 New record!", "Enter: jogar de novo · Esc: sair": "Enter: play again · Esc: quit",
+    "Setas: pilotar · Espaço: atirar · Enter: especial · P: pausa · Esc: sair": "Arrows: fly · Space: shoot · Enter: special · P: pause · Esc: quit", "🔧 Consertos": "🔧 Repairs", "🔧 Mecânico genial": "🔧 Genius mechanic",
     "Hora da manutenção! 🔧": "Maintenance time! 🔧", "Esse foguete precisa de uns ajustes... 🔧": "This rocket needs some tweaks... 🔧",
     "Vou turbinar esse motor! 🔧⚡": "I'm gonna boost this engine! 🔧⚡", "Foguete novinho em folha! 🔧✨": "Good as new! 🔧✨",
     "Pronto! Agora vai voar mais rápido! 🚀": "Done! Now it'll fly faster! 🚀", "Neutron, você é um gênio! 😎🔧": "Neutron, you're a genius! 😎🔧",
@@ -624,6 +639,10 @@ EN = {
 # Textos com partes variáveis: {} vira (.+?) e cada pedaço também é traduzido
 MODELOS_EN = [
     ("🔬 {}", "🔬 {}"),
+    ("Pontos: {}", "Score: {}"), ("Onda {}", "Wave {}"), ("🏆 Recorde: {}", "🏆 Record: {}"),
+    ("Onda {}: METEORO CHEFE! ☄️", "Wave {}: BOSS METEOR! ☄️"), ("Onda {}: REI GOOBOT! 👑", "Wave {}: KING GOOBOT! 👑"), ("Onda {} completa! +{} 🎉", "Wave {} complete! +{} 🎉"),
+    ("{} pontos · onda {}", "{} points · wave {}"), ("Fizemos {} pontos! 🕹️", "We scored {} points! 🕹️"),
+    ("Fizemos {} pontos! 🕹️ 🏆 Recorde!", "We scored {} points! 🕹️ 🏆 Record!"),
     ("Anotado! 📝 Te lembro às {}.", "Got it! 📝 I'll remind you at {}."),
     ("⚡ Calculando... Escolhi: {}! 🎲", "⚡ Calculating... I pick: {}! 🎲"),
     ("💧 Boa! {} copo(s) de água hoje.", "💧 Nice! {} glass(es) of water today."),
@@ -1046,13 +1065,13 @@ SOM_DIR = os.path.join(RES_DIR, "sons")
 class Sons:
     """Efeitos sonoros (WAV na pasta sons, embutida no .exe)."""
     NOMES = ("explosao", "decolagem", "paraquedas", "pouso", "goddard", "latido", "jetpack_liga", "jetpack", "ronco", "aviso",
-             "brainblast", "fogos", "bolinha")
+             "brainblast", "fogos", "bolinha", "laser", "estouro")
     LOOPS = ("jetpack", "ronco")
     # Cada som pertence a um personagem (dá para desligar por grupo nas configurações)
     GRUPO = {"paraquedas": "som_jimmy", "pouso": "som_jimmy", "ronco": "som_ronco", "aviso": "som_avisos",
              "latido": "som_goddard", "goddard": "som_goddard", "jetpack_liga": "som_goddard", "jetpack": "som_goddard",
              "decolagem": "som_foguete", "explosao": "som_foguete",
-             "brainblast": "som_jimmy", "fogos": "som_jimmy", "bolinha": "som_goddard"}
+             "brainblast": "som_jimmy", "fogos": "som_jimmy", "bolinha": "som_goddard", "laser": "som_jimmy", "estouro": "som_foguete"}
 
     def liberado(self, nome):
         return CFG["sons"] and not nao_perturbe() and CFG.get(self.GRUPO.get(nome, ""), True)
@@ -1505,6 +1524,783 @@ class Ball(QWidget):
 
 BALL = None
 
+def desenhar_meteoro(p, cx, cy, r, giro, vx, vy):
+    """Pedra em chamas com crateras; o rastro de fogo fica do lado contrário ao movimento."""
+    ang = math.atan2(vy, vx)
+    tx, ty = cx - math.cos(ang) * r * 1.4, cy - math.sin(ang) * r * 1.4
+    g = QRadialGradient(tx, ty, r * 1.6)
+    g.setColorAt(0, QColor(255, 230, 120, 230))
+    g.setColorAt(0.5, QColor(255, 120, 30, 160))
+    g.setColorAt(1, QColor(255, 60, 0, 0))
+    p.setPen(Qt.PenStyle.NoPen)
+    p.setBrush(g)
+    p.drawEllipse(int(tx - r * 1.6), int(ty - r * 1.6), int(r * 3.2), int(r * 3.2))
+    p.save()
+    p.translate(cx, cy)
+    p.rotate(giro)
+    rg = QRadialGradient(-r * 0.3, -r * 0.3, r * 1.3)
+    rg.setColorAt(0, QColor(170, 120, 80))
+    rg.setColorAt(1, QColor(80, 50, 35))
+    p.setPen(QPen(QColor(50, 30, 20), 1.5))
+    p.setBrush(rg)
+    p.drawEllipse(int(-r), int(-r), int(2 * r), int(2 * r))
+    p.setPen(Qt.PenStyle.NoPen)
+    p.setBrush(QColor(60, 40, 28, 170))
+    for dx, dy, rr in ((-0.35, -0.2, 0.25), (0.3, 0.25, 0.2), (0.1, -0.45, 0.15)):
+        p.drawEllipse(int(dx * r - rr * r), int(dy * r - rr * r), int(2 * rr * r), int(2 * rr * r))
+    p.restore()
+
+
+class ModoGame(QWidget):
+    """🕹️ Jimmy no foguete com a pistola de laser contra ondas de meteoros; o Goddard ajuda de jetpack.
+    Setas (ou WASD) pilotam, Espaço atira, Enter solta o redemoinho especial, P pausa, Esc sai."""
+    PODERES = {"escudo": "🛡️", "triplo": "⚡", "vida": "❤️", "energia": "🌀"}
+    INIMIGOS = {
+        "blob":     {"voa": "alien_blob_voa", "dano": "alien_blob_dano", "fim": "alien_blob_fim", "hp": 1, "tam": 70, "vel": 3.2, "pts": 30, "onda": 2},
+        "aranha":   {"voa": "alien_aranha_voa", "dano": "alien_aranha_dano", "fim": "alien_aranha_fim", "hp": 2, "tam": 80, "vel": 5.0, "pts": 40, "onda": 3},
+        "cerebro":  {"voa": "alien_cerebro_voa", "dano": "alien_cerebro_dano", "fim": "alien_cerebro_fim", "ataca": "alien_cerebro_ataca",
+                     "hp": 3, "tam": 85, "vel": 2.0, "pts": 60, "onda": 4, "atira": 85},
+        "soldado":  {"voa": "yok_soldado", "voa2": "yok_aponta", "dano": "yok_dano", "fim": "yok_dano", "hp": 3, "tam": 95, "vel": 2.3, "pts": 60, "onda": 6},
+        "atirador": {"voa": "yok_atirador", "dano": "yok_dano", "fim": "yok_dano", "hp": 3, "tam": 95, "vel": 2.0, "pts": 80, "onda": 7, "atira": 70},
+    }
+
+    def __init__(self, ao_sair):
+        super().__init__()
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        geo = tela_geo()
+        self.setGeometry(geo)
+        self.W, self.H = geo.width(), geo.height()
+        self.ao_sair = ao_sair
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setCursor(Qt.CursorShape.BlankCursor)
+        self.k = max(0.75, vel())
+        self.B = int(round(175 * self.k))      # Jimmy no foguete
+        self.BG = int(round(105 * self.k))     # Goddard de jetpack
+        self.cache = {}
+        self.teclas = set()
+        self.estrelas = [(random.uniform(0, self.W), random.uniform(0, self.H), random.uniform(0.6, 2.6)) for _ in range(110)]
+        self.novo_jogo()
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.passo)
+        self.timer.start(30)
+        self.show()
+        self.raise_()
+        self.activateWindow()
+        self.setFocus()
+        self.grabKeyboard()
+
+    # ---------- imagens ----------
+    def img(self, anim, i, lado, espelho=False):
+        caminho = Pet.frame(None, anim, i, None)
+        if not caminho: return QPixmap()
+        chave = (caminho, lado, espelho)
+        if chave not in self.cache:
+            pm = QPixmap(caminho)
+            if not pm.isNull():
+                pm = pm.scaled(lado, lado, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                if espelho: pm = pm.transformed(QTransform().scale(-1, 1))
+            self.cache[chave] = pm
+        return self.cache[chave]
+
+    # ---------- partida ----------
+    def novo_jogo(self):
+        stat("game_partidas")
+        self.jx, self.jy = self.W * 0.1, self.H * 0.4
+        self.jvx = self.jvy = 0.0
+        self.gx, self.gy = self.jx - self.BG, self.jy + self.B * 0.6
+        self.vidas, self.pontos, self.combo, self.onda = 3, 0, 0, 0
+        self.energia = 0.0
+        self.lasers, self.lasers_gd, self.meteoros, self.particulas, self.poderes = [], [], [], [], []
+        self.inimigos, self.tiros_ini, self.derrotados = [], [], []
+        self.t = self.tiro_cd = self.tiro_t = self.inv = self.ferido = 0
+        self.escudo = self.triplo = self.especial = self.flash = 0
+        self.gd_cd, self.gd_tonto = 60, 0
+        self.estado, self.estado_t = "contagem", 0
+        self.msg, self.msg_t = "", 0
+        self.intervalo = 0
+        self.recorde_novo = False
+        self.prox_onda()
+
+    def prox_onda(self):
+        self.onda += 1
+        self.chefe = self.onda % 5 == 0
+        self.a_lancar = (4 + self.onda) if self.chefe else (8 + 4 * self.onda)
+        self.lancar_cd = 40
+        if self.chefe and self.onda % 10 == 0 and Pet.frame(None, "yok_goobot", 0, None):
+            self.lancar_goobot()
+            self.aviso(f"Onda {self.onda}: REI GOOBOT! 👑", 100)
+        elif self.chefe:
+            self.lancar(chefe=True)
+            self.aviso(f"Onda {self.onda}: METEORO CHEFE! ☄️", 90)
+        else:
+            self.aviso(f"Onda {self.onda}", 60)
+
+    def aviso(self, texto, ticks=70):
+        self.msg, self.msg_t = texto, ticks
+
+    def lancar_inimigo(self, tipo, x=None, y=None):
+        t = self.INIMIGOS[tipo]
+        lado = int(t["tam"] * self.k)
+        self.inimigos.append({"tipo": tipo, "x": self.W + lado / 2 if x is None else x,
+                              "y": random.uniform(lado / 2 + 40, self.H - lado / 2 - 70) if y is None else y,
+                              "y0": 0.0, "vx": -t["vel"] * self.k * random.uniform(0.85, 1.15) * (1 + 0.05 * (self.onda - 1)),
+                              "hp": t["hp"], "lado": lado, "fase": random.uniform(0, 6.3), "dano": 0,
+                              "atira": t.get("atira", 0) and random.randint(30, t["atira"]), "ataca": 0, "chefe": False})
+        self.inimigos[-1]["y0"] = self.inimigos[-1]["y"]
+
+    def lancar_goobot(self):
+        lado = int(260 * self.k)
+        self.inimigos.append({"tipo": "goobot", "x": self.W + lado / 2, "y": self.H / 2, "y0": self.H / 2, "vx": -1.5 * self.k,
+                              "hp": 60 + 10 * self.onda, "hp0": 60 + 10 * self.onda, "lado": lado, "fase": 0.0, "dano": 0,
+                              "atira": 90, "ataca": 0, "chefe": True, "chama": 200})
+
+    def lancar(self, chefe=False):
+        k = self.k
+        # Da onda 2 em diante, parte das "pedras" vira alienígena
+        if not chefe and random.random() < min(0.55, 0.12 * self.onda):
+            tipos = [t for t, d in self.INIMIGOS.items() if d["onda"] <= self.onda and Pet.frame(None, d["voa"], 0, None)]
+            if tipos:
+                self.lancar_inimigo(random.choice(tipos))
+                return
+        if chefe:
+            r, hp, vx = 70 * k, 25 + 5 * self.onda, -1.2 * k
+        else:
+            tam = random.choices((1, 2, 3), weights=(5, 3, min(4, self.onda)))[0]
+            r, hp = (13, 21, 31)[tam - 1] * k, (1, 2, 4)[tam - 1]
+            vx = -random.uniform(2.6, 4.6) * k * (1 + 0.1 * (self.onda - 1))
+        self.meteoros.append({"x": self.W + r, "y": random.uniform(r + 50, self.H - r - 70), "vx": vx,
+                              "vy": random.uniform(-0.7, 0.7) * k, "r": r, "hp": hp, "hp0": hp, "chefe": chefe,
+                              "giro": random.uniform(0, 360), "fase": random.uniform(0, 6.3)})
+
+    # ---------- teclado ----------
+    def keyPressEvent(self, e):
+        if e.isAutoRepeat(): return
+        tecla = e.key()
+        self.teclas.add(tecla)
+        if tecla == Qt.Key.Key_Escape:
+            self.sair()
+        elif tecla == Qt.Key.Key_P and self.estado in ("jogando", "pausa"):
+            self.estado = "pausa" if self.estado == "jogando" else "jogando"
+        elif tecla in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            if self.estado == "fim": self.novo_jogo()
+            elif self.estado == "jogando": self.usar_especial()
+
+    def keyReleaseEvent(self, e):
+        if not e.isAutoRepeat(): self.teclas.discard(e.key())
+
+    def focusOutEvent(self, e):
+        # Trocou de janela (Alt+Tab): solta as teclas e pausa
+        self.teclas.clear()
+        if self.estado == "jogando": self.estado = "pausa"
+
+    def mousePressEvent(self, e):
+        self.activateWindow(); self.setFocus()
+
+    def sair(self):
+        self.timer.stop()
+        self.releaseKeyboard()
+        self.close()
+        self.deleteLater()
+        self.ao_sair(self.pontos, self.recorde_novo)
+
+    # ---------- lógica ----------
+    def passo(self):
+        try:
+            self.t += 1
+            if self.estado == "contagem":
+                self.estado_t += 1
+                if self.estado_t >= 100: self.estado = "jogando"
+            elif self.estado == "jogando":
+                self.logica()
+            if self.estado != "pausa":
+                self.mexer_particulas()
+                if self.msg_t > 0: self.msg_t -= 1
+            self.update()
+        except Exception as e:
+            log_error(e)
+
+    def segurando(self, *teclas):
+        return any(t in self.teclas for t in teclas)
+
+    def caixa_jimmy(self):
+        return (self.jx + self.B * 0.2, self.jy + self.B * 0.2, self.jx + self.B * 0.85, self.jy + self.B * 0.85)
+
+    def caixa_goddard(self):
+        return (self.gx + self.BG * 0.15, self.gy + self.BG * 0.2, self.gx + self.BG * 0.85, self.gy + self.BG * 0.85)
+
+    @staticmethod
+    def bate(caixa, x, y, r):
+        x0, y0, x1, y1 = caixa
+        return math.hypot(x - max(x0, min(x, x1)), y - max(y0, min(y, y1))) < r
+
+    def logica(self):
+        k = self.k
+        Q = Qt.Key
+        dx = self.segurando(Q.Key_Right, Q.Key_D) - self.segurando(Q.Key_Left, Q.Key_A)
+        dy = self.segurando(Q.Key_Down, Q.Key_S) - self.segurando(Q.Key_Up, Q.Key_W)
+        lim = 10 * k
+        self.jvx = max(-lim, min(lim, self.jvx * 0.86 + dx * 1.5 * k))
+        self.jvy = max(-lim, min(lim, self.jvy * 0.86 + dy * 1.5 * k))
+        self.jx = max(0, min(self.jx + self.jvx, self.W - self.B))
+        self.jy = max(30, min(self.jy + self.jvy, self.H - self.B))
+        if self.t % 2 == 0:
+            self.fumaca(self.jx + self.B * 0.06, self.jy + self.B * 0.88)
+        for nome in ("tiro_cd", "tiro_t", "inv", "ferido", "escudo", "triplo", "gd_tonto", "flash"):
+            if getattr(self, nome) > 0: setattr(self, nome, getattr(self, nome) - 1)
+        # Tiro (segurar Espaço = rajada)
+        if self.segurando(Q.Key_Space) and not self.tiro_cd and not self.ferido and not self.especial:
+            self.atirar()
+        # Especial: carrega, solta o redemoinho e limpa a tela
+        if self.especial:
+            self.especial -= 1
+            if self.especial == 55:
+                self.flash = 12
+                tocar("explosao")
+                for m in list(self.meteoros):
+                    if m["chefe"]:
+                        m["hp"] -= 10
+                        if m["hp"] <= 0: self.destruir(m)
+                    else:
+                        self.destruir(m)
+                for a in list(self.inimigos):
+                    a["hp"] -= 15 if a["chefe"] else 99
+                    if a["hp"] <= 0: self.derrotar(a)
+        self.mexer_lasers()
+        self.mexer_goddard()
+        self.mexer_meteoros()
+        self.mexer_inimigos()
+        self.mexer_poderes()
+        # Ondas
+        if self.a_lancar > 0:
+            self.lancar_cd -= 1
+            if self.lancar_cd <= 0:
+                self.lancar()
+                self.a_lancar -= 1
+                self.lancar_cd = max(10, 38 - 3 * self.onda) * random.uniform(0.6, 1.4)
+        elif not self.meteoros and not self.inimigos:
+            self.intervalo += 1
+            if self.intervalo == 1:
+                bonus = 100 * self.onda
+                self.pontos += bonus
+                stat("game_ondas")
+                self.aviso(f"Onda {self.onda} completa! +{bonus} 🎉", 80)
+            if self.intervalo > 100:
+                self.intervalo = 0
+                self.prox_onda()
+
+    def boca_arma(self):
+        return self.jx + self.B * 0.86, self.jy + self.B * 0.43
+
+    def atirar(self):
+        x, y = self.boca_arma()
+        self.lasers.append([x, y, 0.0])
+        if self.triplo:
+            self.lasers.append([x, y, -2.6 * self.k])
+            self.lasers.append([x, y, 2.6 * self.k])
+        self.tiro_cd, self.tiro_t = 7, 8
+        tocar("laser")
+
+    def usar_especial(self):
+        if self.energia >= 1 and not self.especial:
+            self.energia = 0.0
+            self.especial = 75
+            tocar("brainblast")
+            self.aviso("⚡ BRAIN BLAST! 🌀", 60)
+
+    def mexer_lasers(self):
+        v = 24 * self.k
+        for l in self.lasers + self.lasers_gd:
+            l[0] += v if len(l) == 3 else l[3]
+            l[1] += l[2]
+        self.lasers = [l for l in self.lasers if l[0] < self.W + 40]
+        self.lasers_gd = [l for l in self.lasers_gd if -40 < l[0] < self.W + 40 and -40 < l[1] < self.H + 40]
+        for lista in (self.lasers, self.lasers_gd):
+            for l in list(lista):
+                for a in self.inimigos:
+                    if a["x"] > -a["lado"] and math.hypot(l[0] - a["x"], l[1] - a["y"]) < a["lado"] * (0.32 if a["chefe"] else 0.4):
+                        lista.remove(l)
+                        a["hp"] -= 1
+                        a["dano"] = 8
+                        self.faiscas(l[0], l[1], 6, (190, 255, 120))
+                        if a["hp"] <= 0: self.derrotar(a)
+                        break
+            for l in list(lista):
+                for m in self.meteoros:
+                    if math.hypot(l[0] - m["x"], l[1] - m["y"]) < m["r"] + 5:
+                        lista.remove(l)
+                        m["hp"] -= 1
+                        self.faiscas(l[0], l[1], 5, (120, 230, 255) if lista is self.lasers else (255, 90, 90))
+                        if m["hp"] <= 0: self.destruir(m)
+                        break
+
+    def mexer_goddard(self):
+        k = self.k
+        alvo = min(self.poderes, key=lambda pw: math.hypot(pw["x"] - self.gx, pw["y"] - self.gy), default=None)
+        tx, ty = (alvo["x"] - self.BG / 2, alvo["y"] - self.BG / 2) if alvo else (self.jx - self.BG * 0.9, self.jy + self.B * 0.55)
+        f = 0.06 if alvo else 0.08
+        self.gx += (tx - self.gx) * f
+        self.gy += (ty - self.gy) * f
+        self.gx = max(0, min(self.gx, self.W - self.BG))
+        self.gy = max(30, min(self.gy, self.H - self.BG))
+        if self.t % 3 == 0:
+            self.fumaca(self.gx + self.BG * 0.45, self.gy + self.BG * 0.9, pequena=True)
+        # Ajudante: de tempos em tempos late um laser no meteoro mais perto à frente
+        self.gd_cd -= 1
+        if self.gd_cd <= 0 and not self.gd_tonto:
+            bx, by = self.gx + self.BG * 0.85, self.gy + self.BG * 0.4
+            frente = [m for m in self.meteoros + self.inimigos if m["x"] > bx and m["x"] < self.W]
+            if frente:
+                m = min(frente, key=lambda m: math.hypot(m["x"] - bx, m["y"] - by))
+                d = max(1.0, math.hypot(m["x"] - bx, m["y"] - by))
+                v = 18 * k
+                self.lasers_gd.append([bx, by, (m["y"] - by) / d * v, (m["x"] - bx) / d * v])
+                if random.random() < 0.35: tocar("latido")
+            self.gd_cd = max(35, 75 - 4 * self.onda)
+
+    def mexer_meteoros(self):
+        caixa_j, caixa_g = self.caixa_jimmy(), self.caixa_goddard()
+        for m in list(self.meteoros):
+            m["x"] += m["vx"]
+            m["y"] += m["vy"] + (math.sin(self.t * 0.03 + m["fase"]) * 1.2 * self.k if m["chefe"] else 0)
+            m["giro"] += 2 if m["chefe"] else 5
+            if m["y"] < m["r"] + 30 or m["y"] > self.H - m["r"]:
+                m["vy"] = -m["vy"]
+                m["y"] = max(m["r"] + 30, min(m["y"], self.H - m["r"]))
+            if random.random() < 0.4:
+                self.particulas.append({"x": m["x"] + m["r"], "y": m["y"] + random.uniform(-m["r"], m["r"]) * 0.5,
+                                        "vx": 1.0, "vy": random.uniform(-0.3, 0.3), "r": m["r"] * 0.35, "vida": 22,
+                                        "vida0": 22, "cor": (150, 140, 130), "tipo": "fumaca"})
+            if m["x"] < -m["r"]:
+                self.meteoros.remove(m)
+                self.combo = 0                  # deixou passar
+                if m["chefe"]: self.perder_vida()
+                continue
+            if self.bate(caixa_j, m["x"], m["y"], m["r"]) and not self.inv:
+                if self.escudo:
+                    self.escudo = 0
+                    self.aviso("Escudo! 🛡️", 40)
+                    self.destruir(m)
+                else:
+                    self.perder_vida()
+                    if not m["chefe"]: self.explodir(m, pontos=False)
+                continue
+            if not self.gd_tonto and self.bate(caixa_g, m["x"], m["y"], m["r"]):
+                self.gd_tonto = 60               # Goddard fica tonto, mas não perde vida
+                tocar("goddard")
+                if not m["chefe"]: self.explodir(m, pontos=False)
+
+    def mexer_inimigos(self):
+        k = self.k
+        caixa_j, caixa_g = self.caixa_jimmy(), self.caixa_goddard()
+        cx_j, cy_j = self.jx + self.B * 0.5, self.jy + self.B * 0.5
+        for a in list(self.inimigos):
+            a["fase"] += 0.05
+            if a["dano"]: a["dano"] -= 1
+            if a["ataca"]: a["ataca"] -= 1
+            tipo = a["tipo"]
+            if a["chefe"]:
+                # Rei Goobot: entra, para à direita, sobe e desce, atira em leque e chama blobs
+                if a["x"] > self.W * 0.78: a["x"] += a["vx"]
+                amp = max(0.0, min(self.H * 0.3, self.H / 2 - a["lado"] / 2 - 50))   # barra de vida sempre visível
+                a["y"] = self.H / 2 + math.sin(a["fase"] * 0.6) * amp
+                a["atira"] -= 1
+                if a["atira"] <= 0:
+                    for ang in (-0.35, -0.12, 0.12, 0.35):
+                        self.tiros_ini.append([a["x"] - a["lado"] * 0.3, a["y"], -7 * k * math.cos(ang), 7 * k * math.sin(ang), (120, 255, 90)])
+                    a["atira"], a["ataca"] = max(45, 90 - 3 * self.onda), 15
+                    tocar("laser")
+                a["chama"] -= 1
+                if a["chama"] <= 0:
+                    for dy in (-90, 90):
+                        self.lancar_inimigo("blob", x=a["x"] - a["lado"] * 0.3, y=max(80, min(a["y"] + dy * k, self.H - 120)))
+                    a["chama"] = 220
+            else:
+                a["x"] += a["vx"]
+                if tipo == "blob":
+                    a["y"] = a["y0"] + math.sin(a["fase"] * 2) * 60 * k
+                elif tipo == "aranha":
+                    a["y"] += max(-2.5 * k, min(2.5 * k, (cy_j - a["y"]) * 0.02))   # mergulha na sua direção
+                else:
+                    a["y"] = a["y0"] + math.sin(a["fase"]) * 35 * k
+                if a["atira"]:
+                    a["atira"] -= 1
+                    if a["atira"] <= 0 and a["x"] < self.W - 40:
+                        d = max(1.0, math.hypot(cx_j - a["x"], cy_j - a["y"]))
+                        cor = (200, 120, 255) if tipo == "cerebro" else (255, 80, 60)
+                        self.tiros_ini.append([a["x"] - a["lado"] * 0.35, a["y"], (cx_j - a["x"]) / d * 7.5 * k, (cy_j - a["y"]) / d * 7.5 * k, cor])
+                        a["atira"], a["ataca"] = self.INIMIGOS[tipo]["atira"], 12
+                        tocar("laser")
+            if a["x"] < -a["lado"]:
+                self.inimigos.remove(a)
+                self.combo = 0
+                continue
+            raio = a["lado"] * (0.3 if a["chefe"] else 0.38)
+            if not self.inv and self.bate(caixa_j, a["x"], a["y"], raio):
+                if self.escudo:
+                    self.escudo = 0
+                    self.aviso("Escudo! 🛡️", 40)
+                    if not a["chefe"]: self.derrotar(a)
+                else:
+                    self.perder_vida()
+                    if not a["chefe"]: self.derrotar(a, pontos=False)
+                continue
+            if not a["chefe"] and not self.gd_tonto and self.bate(caixa_g, a["x"], a["y"], raio):
+                self.gd_tonto = 60
+                tocar("goddard")
+        # Tiros dos inimigos
+        for t in list(self.tiros_ini):
+            t[0] += t[2]; t[1] += t[3]
+            if not (-30 < t[0] < self.W + 30 and -30 < t[1] < self.H + 30):
+                self.tiros_ini.remove(t)
+            elif self.bate(caixa_j, t[0], t[1], 6 * k) and not self.inv:
+                self.tiros_ini.remove(t)
+                if self.escudo:
+                    self.escudo = 0
+                    self.aviso("Escudo! 🛡️", 40)
+                else:
+                    self.perder_vida()
+            elif not self.gd_tonto and self.bate(caixa_g, t[0], t[1], 6 * k):
+                self.tiros_ini.remove(t)
+                self.gd_tonto = 60
+                tocar("goddard")
+        # Derrotados caindo
+        for d in self.derrotados:
+            d["y"] += d["vy"]; d["vy"] += 0.4 * k; d["x"] += d["vx"]; d["vida"] -= 1
+        self.derrotados = [d for d in self.derrotados if d["vida"] > 0 and d["y"] < self.H + 100]
+
+    def derrotar(self, a, pontos=True):
+        if a in self.inimigos: self.inimigos.remove(a)
+        self.faiscas(a["x"], a["y"], 16, (190, 255, 120))
+        tocar("estouro")
+        anim = "yok_goobot" if a["chefe"] else self.INIMIGOS[a["tipo"]]["fim"]
+        self.derrotados.append({"anim": anim, "x": a["x"], "y": a["y"], "vx": -1.0 * self.k, "vy": -4 * self.k,
+                                "lado": a["lado"], "vida": 60, "giro": 0})
+        if not pontos: return
+        self.combo += 1
+        mult = min(5, 1 + self.combo // 5)
+        base = 1500 if a["chefe"] else self.INIMIGOS[a["tipo"]]["pts"]
+        self.pontos += base * mult
+        self.energia = min(1.0, self.energia + (0.8 if a["chefe"] else 0.08))
+        if a["chefe"]:
+            self.aviso("Rei Goobot derrotado! +1500 👑", 100)
+            tocar("fogos")
+            self.poderes.append({"x": a["x"], "y": a["y"], "tipo": "vida", "fase": 0.0})
+            # Os blobs que ele chamou fogem
+            for b in list(self.inimigos): self.derrotar(b, pontos=False)
+        elif random.random() < 0.15:
+            self.poderes.append({"x": a["x"], "y": a["y"], "tipo": random.choice(list(self.PODERES)), "fase": random.uniform(0, 6)})
+
+    def perder_vida(self):
+        self.vidas -= 1
+        self.combo = 0
+        self.ferido, self.inv = 35, 100
+        tocar("pouso")
+        self.faiscas(self.jx + self.B / 2, self.jy + self.B / 2, 18, (255, 200, 80))
+        if self.vidas <= 0:
+            self.estado = "fim"
+            tocar("explosao")
+            if self.pontos > CFG["game_recorde"]:
+                CFG["game_recorde"] = self.pontos
+                self.recorde_novo = True
+                save_cfg(CFG)
+
+    def explodir(self, m, pontos=True):
+        if m in self.meteoros: self.meteoros.remove(m)
+        self.faiscas(m["x"], m["y"], int(10 + m["r"] / 2), (255, 170, 60))
+        for _ in range(int(3 + m["r"] / 8)):
+            self.particulas.append({"x": m["x"] + random.uniform(-m["r"], m["r"]) * 0.5, "y": m["y"] + random.uniform(-m["r"], m["r"]) * 0.5,
+                                    "vx": random.uniform(-1, 1), "vy": random.uniform(-1, 1), "r": m["r"] * 0.5, "vida": 35,
+                                    "vida0": 35, "cor": (120, 110, 100), "tipo": "fumaca"})
+        tocar("estouro")
+
+    def destruir(self, m):
+        self.explodir(m)
+        self.combo += 1
+        mult = min(5, 1 + self.combo // 5)
+        base = 500 if m["chefe"] else {1: 10, 2: 25}.get(m["hp0"], 50)
+        self.pontos += base * mult
+        self.energia = min(1.0, self.energia + (0.6 if m["chefe"] else 0.06))
+        if m["chefe"]:
+            self.aviso("Chefe derrotado! +500 🏆", 80)
+            self.poderes.append({"x": m["x"], "y": m["y"], "tipo": "vida", "fase": 0.0})
+        elif m["hp0"] == 4:
+            # O grande racha em dois pequenos
+            for vy in (-1.6, 1.6):
+                self.meteoros.append({"x": m["x"], "y": m["y"], "vx": m["vx"] * 1.2, "vy": vy * self.k, "r": 13 * self.k,
+                                      "hp": 1, "hp0": 1, "chefe": False, "giro": 0.0, "fase": 0.0})
+        if not m["chefe"] and random.random() < 0.1:
+            self.poderes.append({"x": m["x"], "y": m["y"], "tipo": random.choice(list(self.PODERES)), "fase": random.uniform(0, 6)})
+
+    def mexer_poderes(self):
+        caixa_j, caixa_g = self.caixa_jimmy(), self.caixa_goddard()
+        for pw in list(self.poderes):
+            pw["x"] -= 1.5 * self.k
+            pw["fase"] += 0.1
+            pw["y"] += math.sin(pw["fase"]) * 0.8
+            if self.bate(caixa_j, pw["x"], pw["y"], 16 * self.k) or self.bate(caixa_g, pw["x"], pw["y"], 16 * self.k):
+                self.poderes.remove(pw)
+                tocar("bolinha")
+                tipo = pw["tipo"]
+                if tipo == "escudo": self.escudo = 330
+                elif tipo == "triplo": self.triplo = 300
+                elif tipo == "vida": self.vidas = min(5, self.vidas + 1)
+                else: self.energia = min(1.0, self.energia + 0.5)
+                self.aviso({"escudo": "🛡️ Escudo!", "triplo": "⚡ Tiro triplo!", "vida": "❤️ +1 vida!",
+                            "energia": "🌀 Energia!"}[tipo], 45)
+            elif pw["x"] < -30:
+                self.poderes.remove(pw)
+
+    # ---------- partículas ----------
+    def fumaca(self, x, y, pequena=False):
+        r = (4 if pequena else 7) * self.k
+        self.particulas.append({"x": x, "y": y + random.uniform(-4, 4), "vx": -random.uniform(2, 4) * self.k,
+                                "vy": random.uniform(-0.4, 0.4), "r": r, "vida": 26, "vida0": 26,
+                                "cor": (235, 235, 240), "tipo": "fumaca"})
+
+    def faiscas(self, x, y, n, cor):
+        for _ in range(n):
+            a = random.uniform(0, 6.3)
+            v = random.uniform(2, 7) * self.k
+            self.particulas.append({"x": x, "y": y, "vx": math.cos(a) * v, "vy": math.sin(a) * v, "r": 2.5 * self.k,
+                                    "vida": random.randint(12, 26), "vida0": 26, "cor": cor, "tipo": "faisca"})
+
+    def mexer_particulas(self):
+        for q in self.particulas:
+            q["x"] += q["vx"]; q["y"] += q["vy"]
+            q["vida"] -= 1
+            if q["tipo"] == "fumaca": q["r"] *= 1.03
+            else: q["vx"] *= 0.93; q["vy"] *= 0.93
+        self.particulas = [q for q in self.particulas if q["vida"] > 0][-500:]
+
+    # ---------- desenho ----------
+    def paintEvent(self, e):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        k = self.k
+        # Céu escurecido com estrelas passando (sensação de voo)
+        p.fillRect(self.rect(), QColor(6, 10, 32, 165))
+        p.setPen(Qt.PenStyle.NoPen)
+        for x, y, sz in self.estrelas:
+            xx = (x - self.t * sz * 1.2) % self.W
+            p.setBrush(QColor(255, 255, 255, int(90 + sz * 60)))
+            p.drawEllipse(int(xx), int(y), int(sz + 0.5), int(sz + 0.5))
+        for q in self.particulas:
+            a = max(0.0, q["vida"] / q["vida0"])
+            r, g, b = q["cor"]
+            p.setBrush(QColor(r, g, b, int((110 if q["tipo"] == "fumaca" else 255) * a)))
+            p.drawEllipse(int(q["x"] - q["r"]), int(q["y"] - q["r"]), int(2 * q["r"]), int(2 * q["r"]))
+        # Power-ups
+        f = p.font()
+        for pw in self.poderes:
+            rr = 17 * k
+            p.setBrush(QColor(255, 255, 255, 200))
+            p.setPen(QPen(QColor(120, 200, 255), 2))
+            p.drawEllipse(int(pw["x"] - rr), int(pw["y"] - rr), int(2 * rr), int(2 * rr))
+            f.setPointSize(int(13 * k)); p.setFont(f)
+            p.drawText(int(pw["x"] - rr), int(pw["y"] - rr), int(2 * rr), int(2 * rr), Qt.AlignmentFlag.AlignCenter, self.PODERES[pw["tipo"]])
+        p.setPen(Qt.PenStyle.NoPen)
+        # Meteoros (o chefe tem barra de vida)
+        for m in self.meteoros:
+            desenhar_meteoro(p, m["x"], m["y"], m["r"], m["giro"], m["vx"], m["vy"])
+            if m["chefe"]:
+                w = m["r"] * 2
+                p.setBrush(QColor(60, 0, 0, 200))
+                p.drawRect(int(m["x"] - w / 2), int(m["y"] - m["r"] - 18), int(w), 8)
+                p.setBrush(QColor(255, 60, 60))
+                p.drawRect(int(m["x"] - w / 2), int(m["y"] - m["r"] - 18), int(w * max(0, m["hp"]) / m["hp0"]), 8)
+        # Alienígenas (espelhados: olham para o Jimmy)
+        for a in self.inimigos:
+            if a["chefe"]:
+                anim, i = "yok_goobot", 0
+            else:
+                t = self.INIMIGOS[a["tipo"]]
+                if a["dano"]: anim, i = t["dano"], 0
+                elif a["ataca"] and "ataca" in t: anim, i = t["ataca"], 0
+                elif "voa2" in t: anim, i = (t["voa"], 0) if (self.t // 20) % 2 else (t["voa2"], 0)
+                else: anim, i = t["voa"], self.t // 8
+            pm = self.img(anim, i, a["lado"], espelho=True)
+            if a["chefe"] and a["dano"]:
+                p.setOpacity(0.6)
+            p.drawPixmap(int(a["x"] - pm.width() / 2), int(a["y"] - pm.height() / 2), pm)
+            p.setOpacity(1.0)
+            if a["chefe"]:
+                w = a["lado"] * 0.8
+                p.setBrush(QColor(40, 0, 40, 200))
+                p.drawRect(int(a["x"] - w / 2), int(a["y"] - a["lado"] / 2 - 16), int(w), 9)
+                p.setBrush(QColor(140, 255, 90))
+                p.drawRect(int(a["x"] - w / 2), int(a["y"] - a["lado"] / 2 - 16), int(w * max(0, a["hp"]) / a["hp0"]), 9)
+        for d in self.derrotados:
+            pm = self.img(d["anim"], 0, d["lado"], espelho=True)
+            p.setOpacity(max(0.0, d["vida"] / 60))
+            p.drawPixmap(int(d["x"] - pm.width() / 2), int(d["y"] - pm.height() / 2), pm)
+            p.setOpacity(1.0)
+        for t in self.tiros_ini:
+            r, g, b = t[4]
+            p.setBrush(QColor(r, g, b, 90))
+            p.drawEllipse(int(t[0] - 9 * self.k), int(t[1] - 9 * self.k), int(18 * self.k), int(18 * self.k))
+            p.setBrush(QColor(255, 255, 255))
+            p.drawEllipse(int(t[0] - 4 * self.k), int(t[1] - 4 * self.k), int(8 * self.k), int(8 * self.k))
+        # Lasers
+        for l in self.lasers:
+            for larg, cor in ((7, QColor(80, 200, 255, 90)), (3, QColor(220, 250, 255))):
+                p.setPen(QPen(cor, larg * k, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+                p.drawLine(int(l[0] - 34 * k), int(l[1] - l[2] * 1.4), int(l[0]), int(l[1]))
+        for l in self.lasers_gd:
+            d = max(1.0, math.hypot(l[2], l[3]))
+            for larg, cor in ((6, QColor(255, 80, 80, 90)), (2.5, QColor(255, 220, 220))):
+                p.setPen(QPen(cor, larg * k, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+                p.drawLine(int(l[0] - l[3] / d * 22 * k), int(l[1] - l[2] / d * 22 * k), int(l[0]), int(l[1]))
+        p.setPen(Qt.PenStyle.NoPen)
+        # Goddard de jetpack
+        anim = "goddard_hover_scared" if self.gd_tonto else "goddard_fly"
+        p.drawPixmap(int(self.gx), int(self.gy), self.img(anim, self.t // 4, self.BG))
+        # Jimmy no foguete
+        if self.especial:
+            anim, i = ("game_carrega", 0) if self.especial > 55 else ("game_especial", 0)
+        elif self.ferido:
+            anim, i = "game_atingido", 0
+        elif self.tiro_t:
+            anim, i = "game_tiro", 0 if self.tiro_t > 4 else 1
+        elif abs(self.jvy) > 7 * k:
+            anim, i = "game_desvia", 0
+        else:
+            anim, i = "game_voa", self.t // 6
+        if not (self.inv and not self.ferido and (self.t // 3) % 2):
+            p.drawPixmap(int(self.jx), int(self.jy), self.img(anim, i, self.B))
+        if self.escudo and (self.escudo > 60 or (self.t // 4) % 2):
+            p.setPen(QPen(QColor(120, 210, 255, 200), 3))
+            p.setBrush(QColor(120, 210, 255, 45))
+            p.drawEllipse(int(self.jx + self.B * 0.05), int(self.jy + self.B * 0.05), int(self.B * 0.9), int(self.B * 0.9))
+            p.setPen(Qt.PenStyle.NoPen)
+        if self.flash:
+            p.fillRect(self.rect(), QColor(200, 240, 255, int(self.flash * 15)))
+        self.desenhar_hud(p)
+
+    def texto(self, p, x, y, w, h, txt, tam, cor=QColor(255, 255, 255), alinhar=Qt.AlignmentFlag.AlignLeft):
+        f = p.font(); f.setPointSize(int(tam)); f.setBold(True); p.setFont(f)
+        p.setPen(QColor(0, 0, 0, 180))
+        p.drawText(int(x + 2), int(y + 2), int(w), int(h), alinhar | Qt.AlignmentFlag.AlignVCenter, txt)
+        p.setPen(cor)
+        p.drawText(int(x), int(y), int(w), int(h), alinhar | Qt.AlignmentFlag.AlignVCenter, txt)
+
+    def desenhar_hud(self, p):
+        W, H = self.W, self.H
+        C = Qt.AlignmentFlag.AlignHCenter
+        self.texto(p, 20, 10, 400, 30, "❤️" * max(0, self.vidas), 16)
+        self.texto(p, 20, 42, 500, 30, tr(f"Pontos: {self.pontos}"), 16)
+        mult = min(5, 1 + self.combo // 5)
+        info = tr(f"Onda {self.onda}") + (f"   x{mult} 🔥" if mult > 1 else "")
+        self.texto(p, 20, 74, 500, 30, info, 13, QColor(255, 220, 120))
+        # Barra do especial
+        bx, by, bw = 22, 112, 180
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QColor(255, 255, 255, 60)); p.drawRoundedRect(bx, by, bw, 12, 6, 6)
+        cheia = self.energia >= 1
+        p.setBrush(QColor(120, 220, 255) if not cheia or (self.t // 6) % 2 else QColor(255, 255, 255))
+        p.drawRoundedRect(bx, by, int(bw * self.energia), 12, 6, 6)
+        self.texto(p, bx + bw + 8, by - 8, 260, 28, tr("🌀 ENTER!") if cheia else "🌀", 11, QColor(160, 230, 255))
+        self.texto(p, W - 420, 10, 400, 30, tr(f"🏆 Recorde: {max(CFG['game_recorde'], self.pontos)}"), 14,
+                   QColor(255, 220, 120), Qt.AlignmentFlag.AlignRight)
+        self.texto(p, 0, H - 40, W, 30, tr("Setas: pilotar · Espaço: atirar · Enter: especial · P: pausa · Esc: sair"), 10,
+                   QColor(255, 255, 255, 190), C)
+        if self.msg_t:
+            a = min(255, self.msg_t * 12)
+            self.texto(p, 0, H * 0.18, W, 50, tr(self.msg), 24, QColor(255, 255, 255, a), C)
+        if self.estado == "contagem":
+            n = 3 - self.estado_t // 25
+            self.texto(p, 0, H * 0.35, W, 120, str(n) if n > 0 else tr("VAI! 🚀"), 64, QColor(255, 230, 120), C)
+        elif self.estado == "pausa":
+            self.texto(p, 0, H * 0.38, W, 80, tr("⏸️ Pausa (P para voltar)"), 32, QColor(255, 255, 255), C)
+        elif self.estado == "fim":
+            p.setBrush(QColor(0, 0, 0, 170)); p.setPen(Qt.PenStyle.NoPen)
+            p.drawRoundedRect(int(W / 2 - 300), int(H * 0.28), 600, 230, 20, 20)
+            self.texto(p, 0, H * 0.28 + 15, W, 60, tr("Fim de jogo!"), 34, QColor(255, 120, 100), C)
+            self.texto(p, 0, H * 0.28 + 80, W, 50, tr(f"{self.pontos} pontos · onda {self.onda}"), 22, QColor(255, 255, 255), C)
+            if self.recorde_novo:
+                self.texto(p, 0, H * 0.28 + 128, W, 40, tr("🏆 Novo recorde!"), 20, QColor(255, 220, 120), C)
+            self.texto(p, 0, H * 0.28 + 175, W, 40, tr("Enter: jogar de novo · Esc: sair"), 14, QColor(220, 220, 220), C)
+
+
+class Planeta(QWidget):
+    """Planeta no alto da tela com uma lhama perdida em cima (o Jimmy vai buscar)."""
+    def __init__(self, cx):
+        super().__init__()
+        _overlay_flags(self)
+        k = vel()
+        self.lado = int(230 * k)
+        self.setFixedSize(self.lado, self.lado)
+        caminho = Pet.frame(None, "planeta", 0, None)
+        pm = QPixmap(caminho) if caminho else QPixmap()
+        self.pm = pm.scaled(self.lado, self.lado, Qt.AspectRatioMode.KeepAspectRatio,
+                            Qt.TransformationMode.SmoothTransformation) if not pm.isNull() else pm
+        lh = Pet.frame(None, random.choice(["lhama_marrom", "lhama_branca"]), 0, None)
+        self.lhama_anim = os.path.basename(os.path.dirname(lh)) if lh else "lhama_marrom"
+        lpm = QPixmap(lh) if lh else QPixmap()
+        self.lhama = lpm.scaled(int(80 * k), int(80 * k), Qt.AspectRatioMode.KeepAspectRatio,
+                                Qt.TransformationMode.SmoothTransformation) if not lpm.isNull() else lpm
+        self.com_lhama = True
+        # No quadro extraído o planeta ocupa a parte de baixo: o topo da esfera fica a ~40% da altura
+        self.cx = max(self.lado / 2, min(cx, tela_geo().width() - self.lado / 2))
+        self.topo = 10
+        self.chao_lhama = self.topo + self.lado * 0.42     # onde a lhama pisa (sem OX/OY)
+        self.alpha, self.alvo_alpha, self.t = 0.0, 1.0, 0
+        self.move(int(self.cx - self.lado / 2) + OX, int(self.topo) + OY)
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.passo)
+        self.timer.start(30)
+        self.show()
+
+    def passo(self):
+        self.t += 1
+        self.alpha += (self.alvo_alpha - self.alpha) * 0.05
+        if self.alvo_alpha == 0 and self.alpha < 0.02:
+            self.timer.stop()
+            self.close()
+            self.deleteLater()
+            return
+        self.update()
+
+    def sumir(self):
+        self.alvo_alpha = 0.0
+
+    def paintEvent(self, e):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        p.setOpacity(self.alpha)
+        bob = math.sin(self.t * 0.04) * 3
+        p.drawPixmap(int((self.lado - self.pm.width()) / 2), int(bob), self.pm)
+        if self.com_lhama and not self.lhama.isNull():
+            # Em pé no alto do planeta, olhando de um lado para o outro
+            lh = self.lhama if (self.t // 60) % 2 else self.lhama.transformed(QTransform().scale(-1, 1))
+            p.drawPixmap(int(self.lado / 2 - lh.width() / 2), int(bob + self.lado * 0.42 - lh.height()), lh)
+
+
+class LhamaCarona(QWidget):
+    """A lhama resgatada voltando de carona no foguete do Jimmy."""
+    def __init__(self, anim):
+        super().__init__()
+        _overlay_flags(self)
+        k = vel()
+        lh = Pet.frame(None, anim, 0, None)
+        pm = QPixmap(lh) if lh else QPixmap()
+        self.pm = pm.scaled(int(70 * k), int(70 * k), Qt.AspectRatioMode.KeepAspectRatio,
+                            Qt.TransformationMode.SmoothTransformation) if not pm.isNull() else pm
+        self.setFixedSize(max(1, self.pm.width()), max(1, self.pm.height()))
+        self.virada = False
+        self.show()
+
+    def follow(self, j, flip):
+        self.virada = flip
+        self.move(int(j.x + j.box * (0.62 if flip else 0.18)) + OX, int(j.y + j.box * 0.22) + OY)
+        _topmost(self)
+        self.update()
+
+    def paintEvent(self, e):
+        p = QPainter(self)
+        p.drawPixmap(0, 0, self.pm.transformed(QTransform().scale(-1, 1)) if self.virada else self.pm)
+
+
 class MedidorGoddard(QWidget):
     """Painelzinho em cima do Goddard: óleo, diversão e limpeza."""
     def __init__(self):
@@ -1582,29 +2378,7 @@ class Meteoro(QWidget):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         c = self.lado / 2
-        # Rastro de fogo na direção contrária ao movimento
-        ang = math.atan2(self.vy, self.vx)
-        tx, ty = c - math.cos(ang) * self.r * 1.4, c - math.sin(ang) * self.r * 1.4
-        g = QRadialGradient(tx, ty, self.r * 1.6)
-        g.setColorAt(0, QColor(255, 230, 120, 230))
-        g.setColorAt(0.5, QColor(255, 120, 30, 160))
-        g.setColorAt(1, QColor(255, 60, 0, 0))
-        p.setPen(Qt.PenStyle.NoPen)
-        p.setBrush(g)
-        p.drawEllipse(int(tx - self.r * 1.6), int(ty - self.r * 1.6), int(self.r * 3.2), int(self.r * 3.2))
-        # Pedra com crateras
-        p.translate(c, c)
-        p.rotate(self.giro)
-        rg = QRadialGradient(-self.r * 0.3, -self.r * 0.3, self.r * 1.3)
-        rg.setColorAt(0, QColor(170, 120, 80))
-        rg.setColorAt(1, QColor(80, 50, 35))
-        p.setPen(QPen(QColor(50, 30, 20), 1.5))
-        p.setBrush(rg)
-        p.drawEllipse(int(-self.r), int(-self.r), int(2 * self.r), int(2 * self.r))
-        p.setPen(Qt.PenStyle.NoPen)
-        p.setBrush(QColor(60, 40, 28, 170))
-        for dx, dy, rr in ((-0.35, -0.2, 0.25), (0.3, 0.25, 0.2), (0.1, -0.45, 0.15)):
-            p.drawEllipse(int(dx * self.r - rr * self.r), int(dy * self.r - rr * self.r), int(2 * rr * self.r), int(2 * rr * self.r))
+        desenhar_meteoro(p, c, c, self.r, self.giro, self.vx, self.vy)
 
     def mousePressEvent(self, e):
         self.acabar(acertou=True)
@@ -2073,6 +2847,98 @@ class Jimmy(Pet):
         self.modo_passeio = passeio
         self.modo_conserto = conserto
         self.state = "going"
+
+    def start_resgate(self, planeta):
+        self.trip_timer.stop()
+        self.sequence_state = "resgate"
+        self.state = "idle"
+        self.vx = self.vy = 0.0
+        self.res = {"fase": "olha", "t": 0, "planeta": planeta, "carona": None}
+        self.say(random.choice(["Olha lá em cima! Uma lhama perdida no espaço! 🦙🪐",
+                                "Aquilo é... uma lhama num planeta?! 🦙🪐"]), 100)
+
+    def resgate_logic(self):
+        r, v = self.res, vel()
+        r["t"] += 1
+        pl = r["planeta"]
+        if r["fase"] == "olha":
+            self.direction = 1 if pl.cx > self.x + self.box / 2 else -1
+            self.show_anim("ideia_susto", 0, flip=self.direction == -1, fallback="jimmy_idle")
+            self.update_pos(self.x, self.ground_y)
+            if r["t"] > 200:
+                r["fase"], r["t"] = "anda", 0
+                self.say("Segura aí, Carl! Eu busco! 🚀", 80)
+        elif r["fase"] == "anda":
+            dx = self.board_x() - self.x
+            if abs(dx) <= 4 * v:
+                self.rocket.hide()
+                self.show_anim("voo_senta", 0)
+                self.base_x, self.base_y = self.board_left(), self.ground_y
+                self.update_pos(self.base_x, self.base_y)
+                r["fase"], r["t"] = "decola", 0
+                tocar("decolagem")
+                return
+            self.direction = 1 if dx > 0 else -1
+            self.x += self.direction * 4 * v
+            self.show_anim("jimmy_walk", r["t"] // 3, flip=self.direction == -1)
+            self.update_pos(self.x, self.ground_y)
+        elif r["fase"] == "decola":
+            self.show_anim("voo_senta", 0)
+            self.update_pos(self.base_x + random.uniform(-2, 2), self.base_y + random.uniform(-2, 2))
+            if FX and r["t"] % 2 == 0:
+                FX.smoke(self.base_x + self.box * random.uniform(0.1, 0.4), self.sh - 14, random.uniform(5, 9),
+                         life=50, vx=random.uniform(-1.2, 1.2), vy=-0.3, gray=random.randint(190, 225), alpha=0.5, grow=2.0)
+            if r["t"] > 30: r["fase"], r["t"] = "sobe", 0
+        elif r["fase"] in ("sobe", "desce"):
+            indo = r["fase"] == "sobe"
+            # Para do lado da lhama, em cima do planeta
+            tx = pl.cx - self.box * 0.85 if indo else self.base_x
+            ty = max(0, pl.chao_lhama - self.box * 0.8) if indo else self.base_y
+            dx, dy = tx - self.x, ty - self.y
+            d = math.hypot(dx, dy)
+            vel_max = 7 * v
+            self.vx += (max(-vel_max, min(vel_max, dx * 0.05)) - self.vx) * 0.12
+            self.vy += (max(-vel_max, min(vel_max, dy * 0.05)) - self.vy) * 0.12
+            self.x += self.vx
+            self.y += self.vy
+            if abs(self.vx) > 0.5 * v: self.direction = 1 if self.vx > 0 else -1
+            flip = self.direction == -1
+            if self.has_anim("voo_brinca") and not indo:
+                anim, i = "voo_brinca", (r["t"] // 45) % 5
+            else:
+                anim, i = "voo_monta", (2, 3, 4, 3)[(r["t"] // 10) % 4]
+            self.show_anim(anim, i, flip=flip, angle=math.sin(r["t"] * 0.1) * 3)
+            self.update_pos(self.x, self.y)
+            if FX and r["t"] % 2 == 0:
+                FX.smoke(self.x + self.box * (0.18 if not flip else 0.82), self.y + self.box * 0.85, random.uniform(3.5, 6),
+                         life=35, vx=-self.direction * 0.6, vy=random.uniform(0.2, 0.8), gray=random.randint(205, 235), alpha=0.45, grow=1.8)
+            if r["carona"]: r["carona"].follow(self, flip)
+            if r["t"] % 10 == 0: _topmost(self)       # na frente do planeta
+            if indo and d < 18 * v:
+                r["fase"], r["t"] = "pega", 0
+            elif not indo and (d < 10 * v or r["t"] > 900):
+                self.update_pos(self.base_x, self.base_y)
+                self.rocket.show()
+                if r["carona"]:
+                    r["carona"].close(); r["carona"].deleteLater()
+                pl.sumir()
+                self.sequence_state = "normal"
+                self.state = "idle"
+                stat("resgates")
+                if MANAGER: MANAGER.fim_resgate(pl.lhama_anim)
+        elif r["fase"] == "pega":
+            if r["t"] == 1: _topmost(self)
+            self.vx *= 0.8; self.vy *= 0.8
+            self.show_anim("voo_monta", 2, flip=self.direction == -1)
+            self.update_pos(self.x, self.y + math.sin(r["t"] * 0.2) * 1.5)
+            if r["t"] == 25:
+                pl.com_lhama = False
+                pl.update()
+                r["carona"] = LhamaCarona(pl.lhama_anim)
+                tocar("bolinha")
+                self.say("Peguei! Segura firme, lhaminha! 🦙", 70)
+            if r["carona"]: r["carona"].follow(self, self.direction == -1)
+            if r["t"] > 70: r["fase"], r["t"] = "desce", 0
 
     def start_conserto(self):
         """Manutenção no foguete: pensa, ajusta, solda (com faíscas), mexe na fiação e aperta."""
@@ -2719,6 +3585,9 @@ class Jimmy(Pet):
             elif self.sequence_state == "conserto":
                 self.conserto_logic()
 
+            elif self.sequence_state == "resgate":
+                self.resgate_logic()
+
             elif self.sequence_state == "busca_mouse":
                 # Teve a ideia (lâmpada) e depois fica olhando o Goddard buscar o ponteiro
                 self.busca_t += 1
@@ -3264,6 +4133,89 @@ class Runner(Pet):
     def pause(self):
         if self.bubble: self.bubble.hide()
         super().pause()
+
+class CarlResgate(Pet):
+    """O Carl chega desesperado, espera o Jimmy buscar a lhama no planeta e vai embora feliz com ela."""
+    shadow_ratio = 0.42
+
+    def __init__(self, jimmy, on_done):
+        super().__init__("carl", IMG_DIR, None, 0, 0)
+        self.jimmy = jimmy
+        self.on_done = on_done
+        self.show_anim("amigo_carl_corre", 0, fallback="amigo_carl_anda")
+        self.side = 1 if jimmy.x + jimmy.box / 2 < self.sw / 2 else -1     # entra pelo lado com mais espaço
+        self.x = self.sw if self.side == 1 else -self.box
+        self.direction = -self.side
+        self.alvo = max(0, min(jimmy.x + jimmy.box / 2 + self.side * 130 * vel() - self.box / 2, self.sw - self.box))
+        self.update_pos(self.x, self.ground_y)
+        self.state, self.t, self.dist, self.fala_t = "chegando", 0, 0.0, 0
+        self.bubble = Bubble(lambda: None)
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.logic)
+        self.timer.start(30)
+
+    def falar(self, texto, ticks=120):
+        self.bubble.say(texto)
+        self.fala_t = ticks
+
+    def feliz(self):
+        self.state, self.t = "feliz", 0
+        self.direction = -self.side
+        self.falar(random.choice(["Lhaminha!! Valeu, Jimmy! 🦙💕", "Você é o melhor, Jimmy! 🦙✨", "Nunca mais foge, tá? 🦙😭"]), 110)
+
+    def logic(self):
+        try:
+            v = vel()
+            self.t += 1
+            hop = 0
+            if self.state == "chegando":
+                passo = 6 * v
+                if abs(self.alvo - self.x) <= passo:
+                    self.x = self.alvo
+                    self.state, self.t = "esperando", 0
+                    self.falar(random.choice(["Jimmy! Minha lhama foi parar naquele planeta! 😱🦙",
+                                              "Socorro! A lhama tá no espaço! 🦙🪐"]), 130)
+                else:
+                    self.x += passo if self.alvo > self.x else -passo
+                    self.dist += passo
+                anim, i = "amigo_carl_corre", int(self.dist / (14 * v))
+            elif self.state == "esperando":
+                # Torcendo lá de baixo, olhando para o Jimmy
+                j = self.jimmy
+                self.direction = 1 if j.x + j.box / 2 > self.x + self.box / 2 else -1
+                anim, i = ("carl_panico", self.t // 10) if self.t < 150 else ("amigo_carl_parado", 0)
+                if self.t == 260: self.falar(random.choice(["Vai, Jimmy! 🙏", "Cuidado com a lhama! 🦙"]), 90)
+            elif self.state == "feliz":
+                anim, i = "amigo_carl_pula", self.t // 8
+                hop = abs(math.sin(self.t * 0.15)) * 14 * v
+                if self.t > 100: self.state, self.direction = "saindo", self.side
+            else:
+                self.x += self.side * 6 * v
+                self.dist += 6 * v
+                anim, i = "amigo_carl_corre", int(self.dist / (14 * v))
+                if self.x < -self.box - 10 or self.x > self.sw + 10:
+                    self.timer.stop()
+                    self.on_done()
+                    self.shutdown()
+                    return
+            self.show_anim(anim, i, flip=self.direction == -1, fallback="amigo_carl_parado")
+            self.update_pos(self.x, self.ground_y - hop)
+            if self.fala_t > 0:
+                self.fala_t -= 1
+                self.bubble.follow(self)
+                if self.fala_t == 0: self.bubble.hide()
+        except Exception as e:
+            log_error(e)
+
+    def shutdown(self):
+        self.bubble.close()
+        self.bubble.deleteLater()
+        super().shutdown()
+
+    def pause(self):
+        self.bubble.hide()
+        super().pause()
+
 
 class Visitante(Friend):
     """Um Jimmy que veio de outro PC da rede."""
@@ -4012,9 +4964,11 @@ class Configuracoes(QWidget):
         b_met.clicked.connect(lambda: self.manager.start_meteoros())
         self.busca_mouse = QCheckBox("🖱️ Buscar o ponteiro")
         self.consertos = QCheckBox("🔧 Consertos")
+        self.resgate_lhama = QCheckBox("🪐 Resgate da lhama")
         linha_gm = QHBoxLayout(); linha_gm.addWidget(self.goddard_pet); linha_gm.addWidget(self.meteoros); linha_gm.addWidget(b_met)
         linha_gm.addWidget(self.busca_mouse)
         linha_gm.addWidget(self.consertos)
+        linha_gm.addWidget(self.resgate_lhama)
         form_ex.addRow(linha_bt2)
         form_ex.addRow(linha_gm)
         self._festa_i = 0
@@ -4214,7 +5168,7 @@ class Configuracoes(QWidget):
         self.idioma.currentIndexChanged.connect(self.salvar_idioma)
         for w in (self.pomo_foco, self.pomo_pausa):
             w.valueChanged.connect(self.salvar_extras)
-        for w in (self.ideias, self.ausente, self.datas, self.foguete_aleatorio, self.amigos, self.invencoes, self.lhamas, self.dancar, self.curiosidades, self.passeios, self.goddard_pet, self.meteoros, self.busca_mouse, self.divulgar, self.consertos,
+        for w in (self.ideias, self.ausente, self.datas, self.foguete_aleatorio, self.amigos, self.invencoes, self.lhamas, self.dancar, self.curiosidades, self.passeios, self.goddard_pet, self.meteoros, self.busca_mouse, self.divulgar, self.consertos, self.resgate_lhama,
                   self.estacoes, self.easter, self.apps_on, self.rede_on, self.atualizar_on, self.atualizar_auto,
                   self.bateria, self.frases, self.clima_on, self.chuva, self.tom_noite):
             w.toggled.connect(self.salvar_extras)
@@ -4229,7 +5183,7 @@ class Configuracoes(QWidget):
                    self.vel_foguete, self.som_jimmy, self.som_ronco, self.som_goddard, self.som_foguete, self.aviso_dormir,
                    self.avisos_on, self.som_avisos, self.ideias, self.ausente, self.ausente_min, self.foguete_aleatorio,
                    self.datas, self.aniv_dia, self.aniv_mes, self.amigos,
-                   self.invencoes, self.lhamas, self.dancar, self.curiosidades, self.estacoes, self.idioma, self.passeios, self.goddard_pet, self.meteoros, self.busca_mouse, self.divulgar, self.consertos, self.easter, self.apps_on,
+                   self.invencoes, self.lhamas, self.dancar, self.curiosidades, self.estacoes, self.idioma, self.passeios, self.goddard_pet, self.meteoros, self.busca_mouse, self.divulgar, self.consertos, self.resgate_lhama, self.easter, self.apps_on,
                    self.rede_on, self.atualizar_on, self.atualizar_auto,
                    self.monitor, self.pomo_foco, self.pomo_pausa, self.bateria, self.frases, self.clima_on, self.chuva,
                    self.tom_noite,
@@ -4272,6 +5226,7 @@ class Configuracoes(QWidget):
         self.carregar_notas()
         self.busca_mouse.setChecked(bool(CFG["busca_mouse"]))
         self.consertos.setChecked(bool(CFG["consertos"]))
+        self.resgate_lhama.setChecked(bool(CFG["resgate_lhama"]))
         self.divulgar.setChecked(bool(CFG["divulgar"]))
         self.carregar_contagens()
         self.dancar.setChecked(bool(CFG["dancar"]))
@@ -4375,6 +5330,7 @@ class Configuracoes(QWidget):
         CFG["meteoros"] = self.meteoros.isChecked()
         CFG["busca_mouse"] = self.busca_mouse.isChecked()
         CFG["consertos"] = self.consertos.isChecked()
+        CFG["resgate_lhama"] = self.resgate_lhama.isChecked()
         CFG["divulgar"] = self.divulgar.isChecked()
         if not CFG["meteoros"]: self.manager.parar_meteoros()
         CFG["dancar"] = self.dancar.isChecked()
@@ -4828,10 +5784,54 @@ class TrayManager:
             for pet in self.pets(): pet.pause()
 
     def pets(self):
-        fixos = [p for p in (self.rocket, self.jimmy, self.goddard, getattr(self, "friend", None)) if p]
+        fixos = [p for p in (self.rocket, self.jimmy, self.goddard, getattr(self, "friend", None), getattr(self, "carl_resgate", None)) if p]
         return fixos + list(getattr(self, "runners", []))
 
+    def start_resgate(self):
+        j = self.jimmy
+        if (not j or j.sequence_state != "normal" or j.state == "going" or getattr(self, "carl_resgate", None) or self.hidden_fs
+                or self.friend or not Pet.frame(None, "planeta", 0, None) or not j.rocket.isVisible()):
+            return
+        self.ultima_busca = time.time()
+        pl = Planeta(random.uniform(0.25, 0.75) * j.sw)
+        self.carl_resgate = CarlResgate(j, self.fim_carl)
+        j.start_resgate(pl)
+
+    def fim_resgate(self, lhama_anim):
+        c = getattr(self, "carl_resgate", None)
+        if not c: return
+        # A lhama desce correndo para o lado em que o Carl vai embora
+        lh = Runner(lhama_anim, c.side, random.uniform(5, 6), on_done=self.runner_done)
+        lh.x = self.jimmy.x + self.jimmy.box / 2
+        lh.show()
+        self.runners.append(lh)
+        c.feliz()
+
+    def fim_carl(self):
+        self.carl_resgate = None
+
+    def start_game(self):
+        if getattr(self, "game", None) or not self.jimmy: return
+        if FX: FX.clear()
+        self.parar_meteoros()
+        for pet in self.pets(): pet.pause()
+        self.ball_was_visible = bool(BALL and BALL.isVisible())
+        if BALL: BALL.hide(); BALL.timer.stop()
+        self.hidden_fs = True      # sem avisos, visitas e afins durante o jogo
+        self.game = ModoGame(self.fim_game)
+
+    def fim_game(self, pontos, recorde):
+        self.game = None
+        self.hidden_fs = False
+        for pet in self.pets(): pet.resume()
+        if BALL and getattr(self, "ball_was_visible", False):
+            BALL.show(); BALL.timer.start(30)
+        j = self.jimmy
+        if j and pontos:
+            j.say(f"Fizemos {pontos} pontos! 🕹️" + (" 🏆 Recorde!" if recorde else ""), 100)
+
     def check_fullscreen(self):
+        if getattr(self, "game", None): return   # o próprio jogo ocupa a tela toda
         try:
             fs = CFG["esconder_tela_cheia"] and foreground_is_fullscreen()
         except Exception as e:
@@ -4877,13 +5877,17 @@ class TrayManager:
         if not j or self.hidden_fs: return
         idle = idle_seconds()
         # Às vezes, antes do cochilo, o Jimmy tem uma ideia e manda o Goddard buscar o ponteiro
-        if (CFG["busca_mouse"] and not self.away and idle >= 600 and not getattr(self, "busca_decidida", False)
+        if ((CFG["busca_mouse"] or CFG["resgate_lhama"]) and not self.away and idle >= 600 and not getattr(self, "busca_decidida", False)
                 and j.sequence_state == "normal" and j.state != "going" and not quieto()):
             self.busca_decidida = True
-            if (random.random() < 0.3 and time.time() - getattr(self, "ultima_busca", 0) > 3600
-                    and self.goddard and not self.goddard.flying and self.goddard.isVisible()):
-                self.start_busca_mouse()
-                return
+            if random.random() < 0.3 and time.time() - getattr(self, "ultima_busca", 0) > 3600:
+                # Sorteia entre o Goddard buscar o ponteiro e o resgate da lhama no planeta
+                opcoes = []
+                if self.goddard and not self.goddard.flying and self.goddard.isVisible(): opcoes.append(self.start_busca_mouse)
+                if CFG["resgate_lhama"]: opcoes.append(self.start_resgate)
+                if opcoes:
+                    random.choice(opcoes)()
+                    return
         if idle < 3: self.busca_decidida = False
         if (CFG["ausente"] and not self.away and idle >= CFG["ausente_min"] * 60
                 and j.sequence_state == "normal" and j.state != "going"):
@@ -5010,9 +6014,11 @@ class TrayManager:
         prox.addAction("⚙️ Ver todos", self.open_config)
         menu.addSeparator()
         jogos = menu.addMenu("🎮 Brincar")
+        jogos.addAction("🕹️ Modo Game", self.start_game)
         jogos.addAction("🚀 Decolar agora", lambda: j and j.launch_now())
         jogos.addAction("🛸 Passeio de foguete", lambda: j and j.go_to_rocket(passeio=True))
         jogos.addAction("🔧 Consertar o foguete", lambda: j and j.go_to_rocket(conserto=True))
+        jogos.addAction("🪐 Resgatar a lhama do planeta", self.start_resgate)
         jogos.addAction("☄️ Chuva de meteoros", self.start_meteoros)
         jogos.addAction("🖱️ Goddard, pega o ponteiro!", self.start_busca_mouse)
         jogos.addAction("💃 Dançar", self.dancar_agora)
@@ -5143,6 +6149,7 @@ class TrayManager:
         menu.addAction("🛸 Passeio de foguete", lambda: j and j.go_to_rocket(passeio=True))
         menu.addAction("🔧 Consertar o foguete", lambda: j and j.go_to_rocket(conserto=True))
         menu.addAction("☄️ Chuva de meteoros", lambda: self.start_meteoros())
+        menu.addAction("🕹️ Modo Game", self.start_game)
         menu.addAction("🖱️ Goddard, pega o ponteiro!", self.start_busca_mouse)
         menu.addAction("⚡ Brain Blast", lambda: j and j.sequence_state == "normal" and j.start_blast())
         menu.addSeparator()

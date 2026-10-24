@@ -998,5 +998,151 @@
         "box": 172
       }
     }
+  },
+  "extracted/jimmyjogofoguete.png": {
+    "box": 230,
+    "alinhar": "esquerda",
+    "lado_usados": true,
+    "animations": {
+      "game_voa": {
+        "frames": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "game_tiro": {
+        "frames": [
+          5,
+          12
+        ]
+      },
+      "game_carrega": {
+        "frames": [
+          10
+        ]
+      },
+      "game_especial": {
+        "frames": [
+          11
+        ]
+      },
+      "game_atingido": {
+        "frames": [
+          0
+        ]
+      },
+      "game_desvia": {
+        "frames": [
+          13
+        ]
+      }
+    }
+  },
+  "extracted/aliens.jpg": {
+    "box": 150,
+    "lado_usados": true,
+    "animations": {
+      "alien_blob_voa": {
+        "frames": [
+          2,
+          1
+        ]
+      },
+      "alien_blob_dano": {
+        "frames": [
+          3
+        ]
+      },
+      "alien_blob_fim": {
+        "frames": [
+          4
+        ]
+      },
+      "alien_aranha_voa": {
+        "frames": [
+          5,
+          7
+        ]
+      },
+      "alien_aranha_dano": {
+        "frames": [
+          8
+        ]
+      },
+      "alien_aranha_fim": {
+        "frames": [
+          9
+        ]
+      },
+      "alien_cerebro_voa": {
+        "frames": [
+          11,
+          10
+        ]
+      },
+      "alien_cerebro_ataca": {
+        "frames": [
+          12
+        ]
+      },
+      "alien_cerebro_dano": {
+        "frames": [
+          13
+        ]
+      },
+      "alien_cerebro_fim": {
+        "frames": [
+          14
+        ]
+      }
+    }
+  },
+  "extracted/yokianos.jpg": {
+    "box": 150,
+    "animations": {
+      "yok_soldado": {
+        "frames": [
+          0
+        ]
+      },
+      "yok_atirador": {
+        "frames": [
+          2
+        ]
+      },
+      "yok_aponta": {
+        "frames": [
+          5
+        ]
+      },
+      "yok_dano": {
+        "frames": [
+          3
+        ]
+      }
+    }
+  },
+  "extracted/goobot.jpg": {
+    "box": 150,
+    "animations": {
+      "yok_goobot": {
+        "frames": [
+          0
+        ]
+      }
+    }
+  },
+  "extracted/planeta.jpg": {
+    "box": 200,
+    "inteira": true,
+    "animations": {
+      "planeta": {
+        "frames": [
+          0
+        ]
+      }
+    }
   }
 }
