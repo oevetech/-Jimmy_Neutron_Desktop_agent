@@ -7,6 +7,7 @@ import json
 import shutil
 import time
 import re
+import datetime
 import threading
 import urllib.request
 import urllib.parse
@@ -19,11 +20,11 @@ import subprocess
 from PyQt6.QtWidgets import (QApplication, QLabel, QWidget, QPushButton, QSystemTrayIcon, QMenu,
                              QSlider, QSpinBox, QCheckBox, QVBoxLayout, QHBoxLayout, QFormLayout,
                              QComboBox, QGroupBox, QTabWidget, QLineEdit, QListWidget, QTimeEdit,
-                             QInputDialog, QMessageBox, QFileDialog)
-from PyQt6.QtCore import Qt, QTimer, QPoint, QSize, QUrl, pyqtSignal, QObject, QTime
+                             QInputDialog, QMessageBox, QFileDialog, QDateEdit, QDialog, QDialogButtonBox)
+from PyQt6.QtCore import Qt, QTimer, QPoint, QSize, QUrl, pyqtSignal, QObject, QTime, QDate
 from PyQt6.QtMultimedia import QSoundEffect, QMediaDevices
 from PyQt6.QtNetwork import QUdpSocket, QHostAddress
-from PyQt6.QtGui import QPixmap, QTransform, QIcon, QPainter, QColor, QRadialGradient, QPolygon, QPen, QCursor
+from PyQt6.QtGui import QPixmap, QTransform, QIcon, QPainter, QColor, QRadialGradient, QPolygon, QPen, QCursor, QDesktopServices
 
 # Imagens e sons: dentro do próprio .exe (PyInstaller extrai em sys._MEIPASS); rodando o .py, de C:\Jimmy
 if getattr(sys, "frozen", False):
@@ -52,7 +53,7 @@ CONFIG_FILE = os.path.join(DATA_DIR, "config_pet.json")
 _OLD_CONFIG = os.path.join("C:" + os.sep, "Jimmy", "config_pet.json")
 if not os.path.exists(CONFIG_FILE) and os.path.exists(_OLD_CONFIG):
     shutil.copyfile(_OLD_CONFIG, CONFIG_FILE)  # aproveita a configuração antiga deste PC
-CONFIG_PADRAO = {"tamanho": 75, "viagem_min": 1, "viagem_max": 5, "goddard": True, "botao_lancar": True,
+CONFIG_PADRAO = {"tamanho": 75, "tamanho_goddard": 100, "viagem_min": 1, "viagem_max": 5, "goddard": True, "botao_lancar": True,
                  "sons": True, "volume": 70, "saida_som": "", "esconder_tela_cheia": True,
                  "dormir": True, "vel_foguete": "medio",
                  "som_jimmy": True, "som_goddard": True, "som_foguete": True, "som_ronco": True,
@@ -65,6 +66,7 @@ CONFIG_PADRAO = {"tamanho": 75, "viagem_min": 1, "viagem_max": 5, "goddard": Tru
                  "stats": {}, "conquistas": [], "meus_lembretes": [], "tom_noite": True,
                  "invencoes": True, "lhamas": True, "dancar": True,
                  "estacoes": True, "easter_egg": False, "rede": False, "curiosidades": True, "idioma": "pt", "passeios": True,
+                 "goddard_pet": True, "busca_mouse": True, "consertos": True, "divulgar": True, "divulga_prox": 0, "notas": [], "agua_hoje": {}, "gd_stats": {}, "meteoros": True, "meteoros_recorde": 0, "contagens": [],
                  "repo_github": "oevetech/-Jimmy_Neutron_Desktop_agent", "atualizar": True,
                  "atualizar_sozinho": True, "avisou_versao": "",
                  "apps_reagir": True, "apps": {
@@ -85,6 +87,16 @@ VEL_FOGUETE = [("bem_lento", "Bem lento", 0.35), ("medio", "Médio", 0.55),
 
 def vel_foguete():
     return {k: f for k, _, f in VEL_FOGUETE}.get(CFG["vel_foguete"], 1.0)
+
+# De vez em quando (12 a 36 h) o Jimmy lembra do canal de quem criou o pet
+CANAL_URL = "https://www.youtube.com/@oevetech"
+FRASES_CANAL = [
+    "Psiu! Já conhece o canal @oevetech no YouTube? ▶️ Clica em mim!",
+    "Quem me trouxe pro seu PC foi o @oevetech! Dá uma passada lá ▶️",
+    "Ideia genial: se inscrever no @oevetech! 💡▶️",
+    "O Goddard aprovou o canal @oevetech! 🐕 Clica em mim pra ver ▶️",
+    "Tem vídeo novo de tecnologia no @oevetech? Vamos ver! ▶️",
+]
 
 # Frases do Jimmy quando a ideia chega (Brain Blast)
 IDEIAS = ["Tive uma ideia! 💡", "Eureka! 💡", "Já sei! 🤓", "Gotta blast! 🚀", "Isso vai funcionar! 🔬"]
@@ -176,6 +188,28 @@ CFG["stats"] = dict(CFG.get("stats") or {})
 CFG["conquistas"] = list(CFG.get("conquistas") or [])
 CFG["meus_lembretes"] = [dict(l) for l in (CFG.get("meus_lembretes") or [])]
 CFG["apps"] = dict(CFG.get("apps") or {})
+CFG["contagens"] = [dict(c) for c in (CFG.get("contagens") or [])]
+CFG["notas"] = [dict(n) for n in (CFG.get("notas") or [])]
+CFG["gd_stats"] = dict(CFG.get("gd_stats") or {})
+
+# ---------- Goddard bichinho virtual: óleo (fome), diversão e limpeza, de 0 a 100 ----------
+GD_ITENS = (("oleo", "🛢️"), ("diversao", "🎾"), ("limpeza", "🛁"))
+GD_QUEDA = {"oleo": 0.35, "diversao": 0.5, "limpeza": 0.25}   # pontos por minuto
+
+def gd_iniciar():
+    st = CFG["gd_stats"]
+    for k, _ in GD_ITENS: st.setdefault(k, 80.0)
+    # Com o pet fechado o tempo passa também (pela metade, no máximo 2 dias)
+    if st.get("ts"):
+        mins = min(2880, max(0, (time.time() - st["ts"]) / 60))
+        for k, q in GD_QUEDA.items(): st[k] = max(0.0, st[k] - q * mins * 0.5)
+    st["ts"] = time.time()
+
+def gd_get(k):
+    return CFG["gd_stats"].get(k, 80.0)
+
+def gd_add(k, n):
+    CFG["gd_stats"][k] = max(0.0, min(100.0, gd_get(k) + n))
 
 APP_VERSAO = "1.0"   # suba este número a cada versão publicada no GitHub
 
@@ -222,6 +256,17 @@ def lembrete_hoje(l, tm):
     if rep == "diario": return True
     if rep == "uteis": return tm.tm_wday < 5
     return rep == f"sem{tm.tm_wday}"
+
+def novo_lembrete(texto, hora, rep):
+    l = {"texto": texto, "hora": hora, "rep": rep, "ultimo": ""}
+    if rep == "uma":
+        # Hoje, se ainda não passou do horário; senão amanhã
+        hoje = time.strftime("%Y-%m-%d")
+        amanha = time.strftime("%Y-%m-%d", time.localtime(time.time() + 86400))
+        l["data"] = hoje if hora > time.strftime("%H:%M") else amanha
+    CFG["meus_lembretes"].append(l)
+    save_cfg(CFG)
+    return l
 
 def lembrete_texto(l):
     nome = dict(REPETICOES).get(l.get("rep"), "")
@@ -302,6 +347,7 @@ CONQUISTAS = [
     ("aviso10", "avisos", 10, "💧 Saúde em dia"),
     ("inv5", "invencoes", 5, "🧪 Cientista maluco"), ("lhama3", "lhamas", 3, "🦙 Caçador de lhamas"),
     ("danca5", "dancas", 5, "💃 Pé de valsa"), ("passeio5", "passeios", 5, "🛸 Piloto de passeio"),
+    ("cuidado20", "cuidados", 20, "🐶 Dono responsável"), ("conserto5", "consertos", 5, "🔧 Mecânico genial"), ("agua50", "copos", 50, "💧 Hidratado de verdade"), ("ponteiro1", "ponteiros", 1, "🖱️ Cadê meu mouse?"), ("meteoro50", "meteoros", 50, "☄️ Caçador de meteoros"),
 ]
 
 def stat(nome, n=1):
@@ -471,7 +517,44 @@ EN = {
     "🍅 Primeiro foco": "🍅 First focus", "🧘 Mestre do foco": "🧘 Focus master", "🎉 Hora da festa": "🎉 Party time",
     "💧 Saúde em dia": "💧 Healthy habits", "🧪 Cientista maluco": "🧪 Mad scientist", "🦙 Caçador de lhamas": "🦙 Llama hunter",
     "💃 Pé de valsa": "💃 Dancing queen", "🛸 Piloto de passeio": "🛸 Joyride pilot",
-    "🛸 Passeio de foguete": "🛸 Rocket joyride", "🛸 Passeio": "🛸 Joyride", "🛸 Passeios": "🛸 Joyrides",
+    "🛸 Passeio de foguete": "🛸 Rocket joyride",
+    "🐶 Dono responsável": "🐶 Responsible owner", "☄️ Caçador de meteoros": "☄️ Meteor hunter",
+    "🛢️ Dar óleo": "🛢️ Give oil", "🎾 Brincar": "🎾 Play", "🛁 Dar banho": "🛁 Give a bath",
+    "Óleo! 😋": "Oil! 😋", "Que limpinho! ✨": "So clean! ✨", "Au au! 🎾": "Woof woof! 🎾",
+    "☄️ Chuva de meteoros": "☄️ Meteor shower", "Chuva de meteoros! Clica neles! ☄️": "Meteor shower! Click them! ☄️",
+    "🐶 Cuidar do Goddard": "🐶 Take care of Goddard", "☄️ Meteoros": "☄️ Meteors", "☄️ Testar": "☄️ Test",
+    "⏳ Datas": "⏳ Dates", "Evento:": "Event:", "Data:": "Date:", "ex.: Viagem de férias": "e.g.: Vacation trip",
+    "(nenhuma data ainda)": "(no dates yet)", "⏳ O Jimmy avisa quantos dias faltam e comemora no dia.": "⏳ Jimmy tells you how many days are left and celebrates on the day.",
+    "é hoje! 🎉": "it's today! 🎉", "amanhã": "tomorrow",
+    "Ei! Para com isso! 😆": "Hey! Stop that! 😆",
+    "Tive uma ideia de invenção! 💡 Mas preciso daquele ponteiro...": "I've got an invention idea! 💡 But I need that pointer...",
+    "Goddard, pega o ponteiro! 🐕": "Goddard, fetch the pointer! 🐕", "🖱️ Goddard, pega o ponteiro!": "🖱️ Goddard, fetch the pointer!",
+    "Valeu, Goddard! Agora sim, vou inventar! 🛠️": "Thanks, Goddard! Now I can invent! 🛠️",
+    "Opa, você voltou! Pode ficar com o mouse 😅": "Oops, you're back! You can keep the mouse 😅",
+    "🖱️ Buscar o ponteiro": "🖱️ Fetch the pointer",
+    "🔧 Consertar o foguete": "🔧 Fix the rocket", "🔧 Consertos": "🔧 Repairs", "🔧 Mecânico genial": "🔧 Genius mechanic",
+    "Hora da manutenção! 🔧": "Maintenance time! 🔧", "Esse foguete precisa de uns ajustes... 🔧": "This rocket needs some tweaks... 🔧",
+    "Vou turbinar esse motor! 🔧⚡": "I'm gonna boost this engine! 🔧⚡", "Foguete novinho em folha! 🔧✨": "Good as new! 🔧✨",
+    "Pronto! Agora vai voar mais rápido! 🚀": "Done! Now it'll fly faster! 🚀", "Neutron, você é um gênio! 😎🔧": "Neutron, you're a genius! 😎🔧",
+    "🎾 Brincar de bolinha com o Goddard": "🎾 Play ball with Goddard", "📝 Novo lembrete...": "📝 New reminder...",
+    "📝 Novo lembrete": "📝 New reminder", "📋 Próximos lembretes": "📋 Upcoming reminders", "(nenhum para hoje)": "(none today)",
+    "⚙️ Ver todos": "⚙️ See all", "🎮 Brincar": "🎮 Play", "🚀 Decolar agora": "🚀 Take off now", "💃 Dançar": "💃 Dance",
+    "🧪 Inventar algo": "🧪 Invent something", "🐶 Goddard": "🐶 Goddard", "🗒️ Nota rápida...": "🗒️ Quick note...",
+    "🗒️ Nota rápida": "🗒️ Quick note", "O que eu anoto?": "What should I write down?",
+    "🎲 Decida por mim...": "🎲 Decide for me...", "🎲 Decida por mim": "🎲 Decide for me",
+    "Opções separadas por vírgula:": "Options separated by commas:", "💧 Bebi água!": "💧 I drank water!",
+    "Vai buscar, Goddard! 🎾": "Go fetch, Goddard! 🎾", "Mais longe agora! 💪": "Farther now! 💪",
+    "Laaaaá longe! 🚀": "Waaaay over there! 🚀", "Essa foi longe! 😄": "That one went far! 😄", "Última! Vai! 🎾": "Last one! Go! 🎾",
+    "Ufa, cansei! Boa, Goddard! 🐕": "Phew, I'm tired! Good boy, Goddard! 🐕", "Guardei a nota! 🗒️ Fica em Configurações → 📝 Meus.": "Note saved! 🗒️ It's in Settings → 📝 Mine.",
+    "🗑️ Apagar nota": "🗑️ Delete note", "(nenhuma nota ainda)": "(no notes yet)",
+    "🗒️ Notas rápidas (clique no Jimmy → Nota rápida):": "🗒️ Quick notes (click Jimmy → Quick note):",
+    "💧 Hidratado de verdade": "💧 Truly hydrated",
+    "Psiu! Já conhece o canal @oevetech no YouTube? ▶️ Clica em mim!": "Psst! Do you know the @oevetech channel on YouTube? ▶️ Click me!",
+    "Quem me trouxe pro seu PC foi o @oevetech! Dá uma passada lá ▶️": "@oevetech brought me to your PC! Go check it out ▶️",
+    "Ideia genial: se inscrever no @oevetech! 💡▶️": "Genius idea: subscribe to @oevetech! 💡▶️",
+    "O Goddard aprovou o canal @oevetech! 🐕 Clica em mim pra ver ▶️": "Goddard approves the @oevetech channel! 🐕 Click me to see ▶️",
+    "Tem vídeo novo de tecnologia no @oevetech? Vamos ver! ▶️": "Any new tech video on @oevetech? Let's see! ▶️",
+    "📺 O Jimmy lembra do canal @oevetech (1 vez a cada 12–36 h)": "📺 Jimmy mentions the @oevetech channel (once every 12–36 h)", "🖱️ Cadê meu mouse?": "🖱️ Where's my mouse?", "Vento de novo?! 🌬️": "Wind again?! 🌬️", "🛸 Passeio": "🛸 Joyride", "🛸 Passeios": "🛸 Joyrides",
     "Que passeio! 😎": "What a ride! 😎",
     # --- menus ---
     "🍅 Pomodoro": "🍅 Pomodoro", "🔕 Não perturbe por 1 hora": "🔕 Do not disturb for 1 hour", "🚀 Lançar agora": "🚀 Launch now",
@@ -540,7 +623,18 @@ EN = {
 
 # Textos com partes variáveis: {} vira (.+?) e cada pedaço também é traduzido
 MODELOS_EN = [
-    ("🔬 {}", "🔬 {}"), ("📝 {}", "📝 {}"), ("⏰ {} ({} min)", "⏰ {} ({} min)"),
+    ("🔬 {}", "🔬 {}"),
+    ("Anotado! 📝 Te lembro às {}.", "Got it! 📝 I'll remind you at {}."),
+    ("⚡ Calculando... Escolhi: {}! 🎲", "⚡ Calculating... I pick: {}! 🎲"),
+    ("💧 Boa! {} copo(s) de água hoje.", "💧 Nice! {} glass(es) of water today."),
+    ("⏰ {} — {}", "⏰ {} — {}"), ("{} — {}", "{} — {}"),
+    ("Você salvou o dia! {}/{} ☄️ Perfeito!", "You saved the day! {}/{} ☄️ Perfect!"),
+    ("Boa! Você pegou {}/{} meteoros! ☄️", "Nice! You got {}/{} meteors! ☄️"),
+    ("Ufa... só {}/{}. Na próxima a gente pega! ☄️", "Phew... only {}/{}. We'll get them next time! ☄️"),
+    ("{} 🏆 Recorde!", "{} 🏆 New record!"),
+    ("🎉 Chegou o dia: {}!", "🎉 The day is here: {}!"), ("⏳ Amanhã é o dia: {}! 🎉", "⏳ Tomorrow is the day: {}! 🎉"),
+    ("⏳ Faltam {} dias para: {}!", "⏳ {} days left until: {}!"), ("faltam {} dias", "{} days left"),
+    ("🗓️ {} — {} ({})", "🗓️ {} — {} ({})"), ("{}❓", "{}❓"), ("📝 {}", "📝 {}"), ("⏰ {} ({} min)", "⏰ {} ({} min)"),
     ("Hoje em {}: {} {}, {}° a {}°. Leve guarda-chuva! ☔", "Today in {}: {} {}, {}° to {}°. Take an umbrella! ☔"),
     ("Hoje em {}: {} {}, {}° a {}°.", "Today in {}: {} {}, {}° to {}°."),
     ("{}: agora {} {}, {}°  (hoje {}° a {}°)", "{}: now {} {}, {}°  (today {}° to {}°)"),
@@ -965,6 +1059,31 @@ class Sons:
 
     def __init__(self):
         self.efeitos = {}
+        self.saida_id = None
+        self.carregar()
+        # Trocou fone/caixa/monitor ou a saída padrão do Windows: recria os sons na saída nova
+        self.dispositivos = QMediaDevices()
+        self.dispositivos.audioOutputsChanged.connect(self.verificar_saida)
+
+    def saida_desejada(self):
+        device = QMediaDevices.defaultAudioOutput()
+        for d in QMediaDevices.audioOutputs():
+            if CFG["saida_som"] and d.description() == CFG["saida_som"]:
+                device = d
+        return device
+
+    def verificar_saida(self):
+        """Chamado quando os dispositivos mudam e a cada minuto (o Windows nem sempre avisa)."""
+        novo = bytes(self.saida_desejada().id())
+        if novo != self.saida_id:
+            self.saida_id = novo
+            self.carregar()
+
+    def carregar(self):
+        tocando = [n for n in self.LOOPS if n in self.efeitos and self.efeitos[n].isPlaying()]
+        for fx in self.efeitos.values():
+            fx.stop(); fx.deleteLater()
+        self.efeitos = {}
         for nome in self.NOMES:
             path = os.path.join(SOM_DIR, nome + ".wav")
             if os.path.exists(path):
@@ -977,12 +1096,15 @@ class Sons:
                     fx.setLoopCount(QSoundEffect.Loop.Infinite.value)
                 self.efeitos[nome] = fx
         self.aplicar_cfg()
+        for n in tocando: self.efeitos[n].play()
 
     def aplicar_cfg(self):
-        device = QMediaDevices.defaultAudioOutput()
-        for d in QMediaDevices.audioOutputs():
-            if CFG["saida_som"] and d.description() == CFG["saida_som"]:
-                device = d
+        device = self.saida_desejada()
+        if self.saida_id is not None and bytes(device.id()) != self.saida_id and self.efeitos:
+            self.saida_id = bytes(device.id())
+            self.carregar()   # mudou a saída nas configurações: recria (setAudioDevice depois de carregar não pega)
+            return
+        self.saida_id = bytes(device.id())
         for fx in self.efeitos.values():
             fx.setAudioDevice(device)
             fx.setVolume(max(0, min(100, CFG["volume"])) / 100)
@@ -1006,6 +1128,9 @@ class Sons:
         fx = self.efeitos.get(nome)
         self.ultimo_som = time.time()
         if fx and (self.liberado(nome) or forcar):
+            if fx.status() == QSoundEffect.Status.Error:
+                self.carregar()   # a saída sumiu (suspensão, fone desconectado): tenta de novo
+                fx = self.efeitos.get(nome)
             fx.play()
 
 SONS = None
@@ -1110,6 +1235,13 @@ class Effects(QWidget):
                       rot=random.uniform(0, 360), vrot=random.uniform(-5, 5),
                       phase=random.uniform(0, 6.28), color=random.choice(colors))
 
+    def bolhas(self, x, y, n):
+        k = vel()
+        for _ in range(n):
+            self._add(kind="bolha", x=x + random.uniform(-30, 30) * k, y=y + random.uniform(-15, 15) * k,
+                      vx=random.uniform(-0.4, 0.4) * k, vy=-random.uniform(0.4, 1.4) * k, r=random.uniform(3, 7) * k,
+                      age=0, life=random.randint(45, 80), phase=random.uniform(0, 6.28))
+
     def snow(self, x0, x1, y, n):
         k = vel()
         for _ in range(n):
@@ -1142,6 +1274,8 @@ class Effects(QWidget):
                 p["vx"] *= 0.98
             elif p["kind"] == "rain":
                 pass   # chuva cai reta, sem gravidade extra
+            elif p["kind"] == "bolha":
+                p["x"] += math.sin(p["age"] * 0.2 + p["phase"]) * 0.5
             elif p["kind"] in ("confetti", "snow"):
                 # Cai balançando de um lado para o outro
                 p["vy"] = min(p["vy"] + 0.03 * vel(), 2.5 * vel())
@@ -1182,6 +1316,13 @@ class Effects(QWidget):
             t = q["age"] / q["life"]
             r = self.radius(q)
             cx, cy = q["x"] - self.ox, q["y"] - self.oy
+            if q["kind"] == "bolha":
+                a = int(200 * (1 - t))
+                p.setPen(QPen(QColor(255, 255, 255, a), 1))
+                p.setBrush(QColor(190, 225, 255, a // 3))
+                p.drawEllipse(int(cx - r), int(cy - r), int(2 * r), int(2 * r))
+                p.setPen(Qt.PenStyle.NoPen)
+                continue
             if q["kind"] == "rain":
                 p.setPen(QPen(QColor(180, 210, 255, 170), 1.5))
                 p.drawLine(int(cx), int(cy), int(cx - q["vx"]), int(cy - q["r"] * 1.6))
@@ -1253,6 +1394,17 @@ class Ball(QWidget):
             self.vx = lado * random.uniform(20, 30) * k
             self.vy = random.uniform(-6, 4) * k
             self.bouncy = random.randint(3, 6)   # quantas batidas "elásticas" antes de cansar
+        self.held_by = None
+        self.thrown = True
+        self.place()
+        self.show()
+        self.timer.start(30)
+
+    def arremessar(self, x, y, vx, vy):
+        """O Jimmy joga a bolinha da mão dele."""
+        self.r = max(5, int(11 * vel()))
+        self.bx, self.by, self.vx, self.vy = x, y, vx, vy
+        self.bouncy = 0
         self.held_by = None
         self.thrown = True
         self.place()
@@ -1352,6 +1504,126 @@ class Ball(QWidget):
         self.thrown = True   # Goddard vai buscar
 
 BALL = None
+
+class MedidorGoddard(QWidget):
+    """Painelzinho em cima do Goddard: óleo, diversão e limpeza."""
+    def __init__(self):
+        super().__init__()
+        _overlay_flags(self)
+        self.setFixedSize(96, 46)
+
+    def follow(self, pet):
+        top = getattr(pet, "content_top", 0)
+        self.move(int(pet.x + pet.box / 2 - 48) + OX, int(pet.y + top - 50) + OY)
+        if not self.isVisible(): self.show()
+        self.update()
+
+    def paintEvent(self, e):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        p.setPen(QColor(40, 40, 40, 200))
+        p.setBrush(QColor(255, 255, 255, 225))
+        p.drawRoundedRect(0, 0, 95, 45, 8, 8)
+        f = p.font(); f.setPointSize(8); p.setFont(f)
+        for i, (k, ico) in enumerate(GD_ITENS):
+            y = 4 + i * 13
+            p.setPen(QColor(0, 0, 0))
+            p.drawText(5, y + 10, ico)
+            v = gd_get(k)
+            p.setPen(Qt.PenStyle.NoPen)
+            p.setBrush(QColor(220, 220, 220))
+            p.drawRoundedRect(24, y + 2, 64, 8, 3, 3)
+            cor = QColor(70, 190, 90) if v >= 60 else QColor(240, 190, 40) if v >= 30 else QColor(225, 70, 60)
+            p.setBrush(cor)
+            p.drawRoundedRect(24, y + 2, int(64 * v / 100), 8, 3, 3)
+
+class Meteoro(QWidget):
+    """Meteoro em chamas: clique para explodir antes que chegue no chão."""
+    def __init__(self, x, alvo_x, chao, on_fim):
+        super().__init__()
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+        self.setCursor(Qt.CursorShape.CrossCursor)
+        k = vel()
+        self.r = max(10, int(17 * k))
+        self.lado = self.r * 4
+        self.setFixedSize(self.lado, self.lado)
+        self.fx, self.fy = x, -self.lado
+        self.chao = chao
+        dist = math.hypot(alvo_x - x, chao - self.fy)
+        vel_m = random.uniform(2.6, 4.2) * k
+        self.vx, self.vy = (alvo_x - x) / dist * vel_m, (chao - self.fy) / dist * vel_m
+        self.on_fim = on_fim
+        self.giro = random.uniform(0, 360)
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.step)
+        self.timer.start(30)
+        self.place()
+        self.show()
+
+    def place(self):
+        self.move(int(self.fx - self.lado / 2) + OX, int(self.fy - self.lado / 2) + OY)
+
+    def step(self):
+        self.fx += self.vx
+        self.fy += self.vy
+        self.giro += 6
+        if FX and random.random() < 0.5:
+            FX.smoke(self.fx - self.vx * 4, self.fy - self.vy * 4, random.uniform(3, 5), life=25,
+                     gray=random.randint(120, 170), alpha=0.4, grow=1.5)
+        if self.fy >= self.chao - self.r:
+            self.acabar(acertou=False)
+            return
+        self.place()
+        self.update()
+
+    def paintEvent(self, e):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        c = self.lado / 2
+        # Rastro de fogo na direção contrária ao movimento
+        ang = math.atan2(self.vy, self.vx)
+        tx, ty = c - math.cos(ang) * self.r * 1.4, c - math.sin(ang) * self.r * 1.4
+        g = QRadialGradient(tx, ty, self.r * 1.6)
+        g.setColorAt(0, QColor(255, 230, 120, 230))
+        g.setColorAt(0.5, QColor(255, 120, 30, 160))
+        g.setColorAt(1, QColor(255, 60, 0, 0))
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(g)
+        p.drawEllipse(int(tx - self.r * 1.6), int(ty - self.r * 1.6), int(self.r * 3.2), int(self.r * 3.2))
+        # Pedra com crateras
+        p.translate(c, c)
+        p.rotate(self.giro)
+        rg = QRadialGradient(-self.r * 0.3, -self.r * 0.3, self.r * 1.3)
+        rg.setColorAt(0, QColor(170, 120, 80))
+        rg.setColorAt(1, QColor(80, 50, 35))
+        p.setPen(QPen(QColor(50, 30, 20), 1.5))
+        p.setBrush(rg)
+        p.drawEllipse(int(-self.r), int(-self.r), int(2 * self.r), int(2 * self.r))
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QColor(60, 40, 28, 170))
+        for dx, dy, rr in ((-0.35, -0.2, 0.25), (0.3, 0.25, 0.2), (0.1, -0.45, 0.15)):
+            p.drawEllipse(int(dx * self.r - rr * self.r), int(dy * self.r - rr * self.r), int(2 * rr * self.r), int(2 * rr * self.r))
+
+    def mousePressEvent(self, e):
+        self.acabar(acertou=True)
+
+    def acabar(self, acertou):
+        if not self.timer.isActive(): return
+        self.timer.stop()
+        if FX:
+            if acertou:
+                FX.sparks(self.fx, self.fy, 28, colors=[(255, 220, 120), (255, 140, 40), (200, 160, 120)], speed=(2, 7))
+            else:
+                FX.sparks(self.fx, self.fy, 14, colors=[(255, 160, 60), (150, 110, 80)], speed=(1, 4))
+                for _ in range(5):
+                    FX.smoke(self.fx + random.uniform(-10, 10), self.fy, random.uniform(6, 10), life=45,
+                             gray=random.randint(110, 150), alpha=0.5, grow=2.0)
+        tocar("pouso")
+        self.on_fim(self, acertou)
+        self.close()
+        self.deleteLater()
 
 class Bubble(QWidget):
     """Balão de fala dos lembretes. Clicar fecha."""
@@ -1527,7 +1799,9 @@ class Pet(QWidget):
                     box = json.load(f).get("box", 150)
             except (OSError, ValueError):
                 pass
-            Pet.box_cache[anim] = int(round(box * ESCALA))
+            # O Goddard ainda tem a proporção dele (em relação ao Jimmy)
+            prop = CFG["tamanho_goddard"] / 100 if anim.startswith("goddard_") else 1.0
+            Pet.box_cache[anim] = int(round(box * ESCALA * prop))
         return Pet.box_cache[anim]
 
     def show_anim(self, anim, i, flip=False, angle=0, anchor="bottom", fallback=None):
@@ -1611,7 +1885,7 @@ class Pet(QWidget):
 
     def contextMenuEvent(self, e):
         # Botão direito em qualquer personagem: menu rápido
-        if MANAGER: MANAGER.quick_menu(e.globalPos())
+        if MANAGER: MANAGER.quick_menu(e.globalPos(), alvo=self)
 
     def move(self, *a):
         # Coordenadas do pet são do monitor escolhido; aqui vira posição real na área de trabalho
@@ -1746,7 +2020,7 @@ class Jimmy(Pet):
         self.rem_kind = None
         self.rem_timer = 0
         self.noite_avisada = None
-        self.bubble = Bubble(self.end_reminder)
+        self.bubble = Bubble(self.clicou_aviso)
         self.say_timer = 0
         self.show_timer = 0
         self.phase = None
@@ -1792,11 +2066,48 @@ class Jimmy(Pet):
         hi = max(lo, int(CFG["viagem_max"]))
         self.trip_timer.start(random.randint(lo, hi) * 60 * 1000)
 
-    def go_to_rocket(self, passeio=False):
+    def go_to_rocket(self, passeio=False, conserto=False):
         if self.sequence_state != "normal": return
+        if conserto and not self.has_anim("conserta"): return
         self.trip_timer.stop()
         self.modo_passeio = passeio
+        self.modo_conserto = conserto
         self.state = "going"
+
+    def start_conserto(self):
+        """Manutenção no foguete: pensa, ajusta, solda (com faíscas), mexe na fiação e aperta."""
+        self.modo_conserto = False
+        self.rocket.hide()          # o foguete da cena já está desenhado nos quadros
+        self.sequence_state = "conserto"
+        self.show_timer = 0
+        self.vx = 0.0
+        self.show_anim("conserta", 0)
+        r = self.rocket
+        self.base_x = max(0, min(r.home_x + r.box / 2 - self.box / 2, self.sw - self.box))
+        self.update_pos(self.base_x, self.ground_y)
+        self.say(random.choice(["Hora da manutenção! 🔧", "Esse foguete precisa de uns ajustes... 🔧",
+                                "Vou turbinar esse motor! 🔧⚡"]), 80)
+
+    def conserto_logic(self):
+        self.show_timer += 1
+        k = self.show_timer
+        passo = min(5, k // 75)
+        self.show_anim("conserta", passo)
+        self.update_pos(self.base_x, self.ground_y)
+        if FX and passo == 2 and k % 3 == 0:
+            # Solda: faíscas saindo da ponta do maçarico
+            FX.sparks(self.x + self.box * 0.72, self.y + self.box * 0.55, 5,
+                      colors=[(255, 240, 160), (255, 190, 60), (255, 255, 255)], speed=(1.5, 5), life=(10, 22))
+        if FX and passo == 3 and k % 25 == 0:
+            FX.sparks(self.x + self.box * 0.6, self.y + self.box * 0.6, 4, colors=[(120, 200, 255), (255, 255, 255)], speed=(1, 3))
+        if k == 2 * 75: tocar("brainblast")
+        if k >= 6 * 75:
+            self.rocket.show()
+            self.sequence_state = "normal"
+            self.state = "idle"
+            stat("consertos")
+            self.say(random.choice(["Foguete novinho em folha! 🔧✨", "Pronto! Agora vai voar mais rápido! 🚀",
+                                    "Neutron, você é um gênio! 😎🔧"]), 90)
 
     def start_passeio(self):
         """Monta no foguete e faz um voo rasante pela tela, ida e volta, e pousa no lugar."""
@@ -1849,12 +2160,15 @@ class Jimmy(Pet):
             self.pas_voltas += 1
             self.x = max(10, min(self.x, self.sw - self.box - 10))
         y = self.base_y - altura + math.sin(k * 0.1) * 10 * v
-        pose = (2, 3, 4, 3)[(k // 10) % 4]
+        if self.has_anim("voo_brinca"):
+            anim, pose = "voo_brinca", (k // 45) % 5
+        else:
+            anim, pose = "voo_monta", (2, 3, 4, 3)[(k // 10) % 4]
         if FX:
             tail_x = self.x + self.box * (0.18 if self.pas_dir == 1 else 0.82)
             FX.smoke(tail_x, y + self.box * 0.85, random.uniform(3.5, 6), life=35, vx=-self.pas_dir * 0.6,
                      vy=random.uniform(0.2, 0.8), gray=random.randint(205, 235), alpha=0.45, grow=1.8)
-        self.show_anim("voo_monta", pose, flip=self.pas_dir == -1, angle=math.sin(k * 0.1) * 3)
+        self.show_anim(anim, pose, flip=self.pas_dir == -1, angle=math.sin(k * 0.1) * 3)
         self.update_pos(self.x, y)
 
     @staticmethod
@@ -1931,6 +2245,12 @@ class Jimmy(Pet):
         if text is None and kind in ("agua", "pausa", "comer", "exercicio"):
             stat("avisos")
 
+    def clicou_aviso(self):
+        # Clicou no balão (ou no Jimmy) durante o aviso: no aviso do canal, abre o YouTube
+        if self.rem_kind == "canal":
+            QDesktopServices.openUrl(QUrl(CANAL_URL))
+        self.end_reminder()
+
     def end_reminder(self):
         if self.sequence_state != "reminder": return
         self.bubble.hide()
@@ -1966,11 +2286,16 @@ class Jimmy(Pet):
     def mousePressEvent(self, e):
         # Clicou nele durante um lembrete: dispensa
         if e.button() == Qt.MouseButton.LeftButton and self.sequence_state == "reminder":
-            self.end_reminder()
+            self.clicou_aviso()
             return
         # Clicou nele dormindo: acorda
         if e.button() == Qt.MouseButton.LeftButton and self.sequence_state == "sleeping":
             self.wake_up()
+            return
+        # Clicou nele de paraquedas: sobe uma rajada de vento e joga ele de volta pra cima
+        if (e.button() == Qt.MouseButton.LeftButton and self.sequence_state == "parachute"
+                and self.flight_timer > 10 and self.updraft > -4 * vel()):
+            self.rajada_clique()
             return
         # Pega o Jimmy com o mouse (só quando ele está no chão)
         if e.button() != Qt.MouseButton.LeftButton or self.sequence_state != "normal": return
@@ -1984,7 +2309,26 @@ class Jimmy(Pet):
         self.show_anim("jimmy_fall", 0, anchor="center", fallback="jimmy_fall")
         gp = e.globalPosition()
         self.drag_off = (gp.x() - self.x, gp.y() - self.y)
+        self.clique = (time.time(), gp.x(), gp.y(), self.x, self.y)
         self.last_drag_x = gp.x()
+
+    def rajada_clique(self):
+        v = vel()
+        # Mais forte quanto mais perto do chão, mas sem passar do topo da tela
+        perto = max(0.0, min(1.0, (self.y + self.box) / max(1, self.sh)))
+        self.updraft = -random.uniform(8, 11) * (0.6 + perto * 0.6) * v
+        self.wind = random.choice([-1, 1]) * random.uniform(1.0, 2.5)
+        stat("rajadas")
+        tocar("paraquedas")
+        if random.random() < 0.5:
+            self.say(random.choice(["Uaaaau! 🌪️", "Ei! Para com isso! 😆", "Vento de novo?! 🌬️"]), 70)
+        if FX:
+            # Coluna de ar subindo por baixo do Jimmy
+            cx, base = self.x + self.box / 2, self.y + self.box
+            for _ in range(16):
+                FX.smoke(cx + random.uniform(-35, 35) * v, base + random.uniform(0, 70) * v, random.uniform(4, 8),
+                         life=random.randint(25, 40), vx=random.uniform(-0.6, 0.6), vy=-random.uniform(3, 6) * v,
+                         gray=random.randint(225, 250), alpha=0.35, grow=1.4)
 
     def mouseMoveEvent(self, e):
         if self.sequence_state != "dragged": return
@@ -1997,6 +2341,17 @@ class Jimmy(Pet):
 
     def mouseReleaseEvent(self, e):
         if self.sequence_state != "dragged": return
+        t0, gx, gy, x0, y0 = self.clique
+        gp = e.globalPosition()
+        if time.time() - t0 < 0.4 and math.hypot(gp.x() - gx, gp.y() - gy) < 6:
+            # Foi só um clique: volta para o lugar e mostra o menu
+            self.setCursor(Qt.CursorShape.OpenHandCursor)
+            self.sequence_state = "normal"
+            self.state = "idle"
+            self.update_pos(x0, y0)
+            self.show_anim("jimmy_idle", 0, flip=self.direction == -1)
+            if MANAGER: MANAGER.menu_clique(gp.toPoint())
+            return
         stat("arrastos")
         self.setCursor(Qt.CursorShape.OpenHandCursor)
         # O vento vai na direção em que ele foi "jogado"
@@ -2285,7 +2640,9 @@ class Jimmy(Pet):
                 if self.state == "going":
                     dx = self.board_x() - self.x
                     if abs(dx) <= max(2, 6 * v) and abs(self.vx) < 1.5 * v:
-                        if getattr(self, "modo_passeio", False):
+                        if getattr(self, "modo_conserto", False):
+                            self.start_conserto()
+                        elif getattr(self, "modo_passeio", False):
                             self.start_passeio()
                         else:
                             self.board_rocket()
@@ -2358,6 +2715,22 @@ class Jimmy(Pet):
 
             elif self.sequence_state == "passeio":
                 self.passeio_logic()
+
+            elif self.sequence_state == "conserto":
+                self.conserto_logic()
+
+            elif self.sequence_state == "busca_mouse":
+                # Teve a ideia (lâmpada) e depois fica olhando o Goddard buscar o ponteiro
+                self.busca_t += 1
+                self.vx = 0.0
+                c = QCursor.pos()
+                alvo = (c.x() - OX) if self.busca_t < 110 else (MANAGER.goddard.x if MANAGER and MANAGER.goddard else c.x() - OX)
+                self.direction = 1 if alvo > self.x + self.box / 2 else -1
+                if self.busca_t < 110:
+                    self.show_anim("ideia_ideia", min(5, self.busca_t // 12), flip=self.direction == -1, fallback="jimmy_idle")
+                else:
+                    self.show_anim("jimmy_idle", 0, flip=self.direction == -1)
+                self.update_pos(self.x, self.ground_y)
 
             elif self.sequence_state == "viagem":
                 self.viagem_logic()
@@ -2670,6 +3043,9 @@ class Jimmy(Pet):
         if CFG["passeios"] and not quieto() and random.random() < 0.004:   # passeio (~1 a cada 12 min)
             self.go_to_rocket(passeio=True)
             return
+        if CFG["consertos"] and not quieto() and random.random() < 0.003:  # manutenção (~1 a cada 15 min)
+            self.go_to_rocket(conserto=True)
+            return
         if CFG["ideias"] and not quieto() and random.random() < 0.006:  # Brain Blast de vez em quando (~1 a cada 8 min)
             self.start_blast()
             return
@@ -2938,6 +3314,7 @@ class Goddard(Pet):
         self.fly_timer = 0
         self.scared = 0
         self.fetch = None
+        self.busca = None        # buscando o ponteiro do mouse
         self.target_phase = None
         self.raio = 1.0          # tamanho pelo raio encolhedor (1 = normal)
         self.raio_alvo = 1.0
@@ -2978,6 +3355,94 @@ class Goddard(Pet):
         self.update_pos(self.x, self.ground_y)
         return True
 
+    def start_busca(self):
+        self.busca = {"fase": "espera", "t": 0}
+        self.fetch = None
+        self.react = None
+
+    def boca(self):
+        """Onde fica a boca do Goddard (coordenadas da tela, sem OX/OY)."""
+        return (self.x + self.box * (0.84 if self.direction == 1 else 0.16), self.y + self.box * 0.44)
+
+    def busca_logic(self, t):
+        b, v = self.busca, vel()
+        b["t"] += 1
+        c = QCursor.pos()
+        cx, cy = c.x() - OX, c.y() - OY
+        if b["fase"] == "espera":
+            # Ouve o Jimmy, late e liga o jetpack
+            if b["t"] == 95: self.start_react("bark", 30)
+            if b["t"] < 125:
+                if self.react:
+                    self.react_logic()
+                else:
+                    self.set_box(int(round(self.anim_box("goddard_idle") * self.raio)))
+                    self.set_image(self.frame("goddard_idle", 0, "goddard_idle"), flip=(self.direction == -1))
+                return
+            b["fase"], b["cursor"] = "indo", (cx, cy)
+            self.react = None
+            self.flying, self.fly_timer = True, 0
+            tocar("jetpack_liga")
+        # Você mexeu no mouse: o Goddard desiste (a busca acaba)
+        if b["fase"] == "indo" and math.hypot(cx - b["cursor"][0], cy - b["cursor"][1]) > 40:
+            return self.fim_busca(False)
+        if b["fase"] == "levando" and math.hypot(cx - b["solto"][0], cy - b["solto"][1]) > 25:
+            return self.fim_busca(False)
+        self.fly_timer += 1
+        som_loop("jetpack", self.fly_timer > 8)
+        if b["fase"] == "indo":
+            self.direction = 1 if cx > self.x + self.box / 2 else -1
+            gx = cx - self.box * (0.84 if self.direction == 1 else 0.16)
+            gy = cy - self.box * 0.44
+        else:
+            # Leva até a mão do Jimmy, do lado de fora dele
+            lado = 1 if self.x + self.box / 2 < t.x + t.box / 2 else -1
+            gx = t.x + t.box / 2 - self.box / 2 - lado * 0.75 * t.box
+            gy = t.y + t.box * 0.3
+            self.direction = lado
+        gy = min(gy, self.ground_y)
+        lim = 7 * v
+        if self.fly_timer < 18:
+            self.vy += (-4 * v - self.vy) * 0.2
+            self.vx *= 0.9
+        else:
+            self.vx += (max(-lim, min(lim, (gx - self.x) * 0.06)) - self.vx) * 0.15
+            self.vy += (max(-lim, min(lim, (gy - self.y) * 0.06)) - self.vy) * 0.15
+        self.x = max(0, min(self.x + self.vx, self.sw - self.box))
+        self.y = max(0, min(self.y + self.vy + math.sin(self.tick * 0.15) * 0.6 * v, self.ground_y))
+        speed = math.hypot(self.vx, self.vy) / v
+        if self.fly_timer < 18:
+            anim, i = "goddard_takeoff", self.fly_timer // 6
+        elif speed > 2.5:
+            anim, i = "goddard_fly", self.tick // 4
+        else:
+            anim, i = "goddard_hover", self.tick // 10
+        self.update_depth()
+        self.depth *= self.raio
+        self.show_anim(anim, i, flip=(self.direction == -1), anchor="bottom" if self.fly_timer < 18 else "center",
+                       fallback="goddard_run1")
+        self.update_pos(self.x, self.y)
+        if FX and self.tick % 3 == 0:
+            FX.smoke(self.x + self.box * random.uniform(0.3, 0.6), self.y + self.box * 0.92, random.uniform(2.5, 4.5),
+                     life=22, vx=-self.vx * 0.2, vy=1.2, gray=random.randint(215, 240), alpha=0.4, grow=1.5)
+        mx, my = self.boca()
+        perto = math.hypot(gx - self.x, gy - self.y) < 14 * v
+        if b["fase"] == "indo" and self.fly_timer > 18 and perto:
+            # Nhac! Mordeu o ponteiro
+            b["fase"] = "levando"
+            tocar("latido")
+            stat("ponteiros")
+        if b["fase"] == "levando":
+            b["solto"] = (int(mx), int(my))
+            QCursor.setPos(int(mx) + OX, int(my) + OY)
+            if self.fly_timer > 18 and perto and abs(self.vx) < 1.5 * v:
+                self.fim_busca(True)
+
+    def fim_busca(self, entregou):
+        self.busca = None
+        self.fly_timer = 18          # o voo normal traz ele de volta ao chão
+        if MANAGER: MANAGER.fim_busca_mouse(entregou)
+
     def encolher(self, sim):
         self.raio_alvo = 0.45 if sim else 1.0
 
@@ -3012,29 +3477,111 @@ class Goddard(Pet):
             b.vx, b.vy = side * 2 * v, -4 * v
             b.thrown = False
             stat("bolinhas")
+            if CFG["goddard_pet"]: gd_add("diversao", 25)
             self.fetch = None
             self.celebrate = 1
             return None
         return goal
 
     def mousePressEvent(self, e):
-        # Clicou no Goddard (no chão): late ou pula de alegria
+        # Clicou no Goddard (no chão): late ou pula de alegria (e ganha um carinho)
         if e.button() != Qt.MouseButton.LeftButton or self.flying or self.react: return
         self.idle_timer = 0
-        if random.random() < 0.5:
+        if CFG["goddard_pet"]: gd_add("diversao", 4)
+        r = random.random()
+        if r < 0.35:
             self.start_react("bark", 30)
-        else:
+        elif r < 0.7:
             self.start_react("jump", 26)
+        else:
+            self.start_react("truque")
+
+    def enterEvent(self, e):
+        self.mouse_em_cima = True
+
+    def leaveEvent(self, e):
+        self.mouse_em_cima = False
+
+    def cuidar_logic(self):
+        """Medidor quando o mouse está em cima; de vez em quando pede o que está faltando."""
+        if not hasattr(self, "medidor"):
+            self.medidor = MedidorGoddard()
+            self.bubble_gd = Bubble(lambda: None)
+            self.pedido_t = 0
+            self.proximo_pedido = time.time() + 120
+        if not CFG["goddard_pet"] or not self.isVisible():
+            self.medidor.hide(); self.bubble_gd.hide()
+            return
+        if getattr(self, "mouse_em_cima", False):
+            self.medidor.follow(self)
+        else:
+            self.medidor.hide()
+        if self.pedido_t > 0:
+            self.pedido_t -= 1
+            self.bubble_gd.follow(self)
+            if self.pedido_t == 0: self.bubble_gd.hide()
+        elif time.time() >= self.proximo_pedido and not self.flying and not quieto():
+            falta = [(gd_get(k), ico) for k, ico in GD_ITENS if gd_get(k) < 25]
+            self.proximo_pedido = time.time() + 240
+            if falta:
+                self.bubble_gd.say(min(falta)[1] + "❓")
+                self.pedido_t = 120
+                if not self.react: self.start_react("pede")
+
+    def cuidar(self, tipo):
+        if tipo == "oleo":
+            gd_add("oleo", 45)
+            fala, anim = "Óleo! 😋", "comer"
+        elif tipo == "banho":
+            gd_add("limpeza", 60)
+            fala, anim = "Que limpinho! ✨", "banho"
+            if FX: FX.bolhas(self.x + self.box / 2, self.y + self.box * 0.6, 14)
+        else:
+            gd_add("diversao", 10)
+            fala, anim = "Au au! 🎾", "brincar"
+        stat("cuidados")
+        tocar("goddard")
+        if not self.flying:
+            self.react = None
+            self.start_react(anim, 26)
+        if hasattr(self, "bubble_gd"):
+            self.bubble_gd.say(fala)
+            self.pedido_t = 70
 
     def pause(self):
         som_loop("jetpack", False)
+        if hasattr(self, "medidor"):
+            self.medidor.hide(); self.bubble_gd.hide()
         super().pause()
 
     def shutdown(self):
         som_loop("jetpack", False)
+        if hasattr(self, "medidor"):
+            self.medidor.close(); self.bubble_gd.close()
         super().shutdown()
 
-    def start_react(self, kind, ticks):
+    # Interações: (animação, quadro) em sequência, cada um por N ticks
+    ROTEIROS = {
+        "pede":    ([("goddard_pede", 0), ("goddard_pede", 1)] * 3, 12),
+        "comer":   ([("goddard_pede", 0), ("goddard_come", 0)] + [("goddard_come", 1), ("goddard_come", 2)] * 4
+                    + [("goddard_come", 3)] * 2, 11),
+        "banho":   ([("goddard_banho", 0)] * 2 + [("goddard_banho", 1), ("goddard_banho", 2)] * 2
+                    + [("goddard_banho", 3)] * 2 + [("goddard_banho", 4)] * 2, 14),
+        "brincar": ([("goddard_brinca", 0), ("goddard_brinca", 1), ("goddard_brinca", 2), ("goddard_brinca", 3)] * 2, 10),
+    }
+
+    def start_react(self, kind, ticks=0):
+        if kind == "truque":
+            # Um truque sorteado: plantar bananeira, rolar, ficar em pé ou fazer charme
+            self.roteiro = [("goddard_truque", random.randint(0, 3))] * 3
+            self.roteiro_passo = 15
+        elif kind in self.ROTEIROS:
+            self.roteiro, self.roteiro_passo = self.ROTEIROS[kind]
+        if kind in self.ROTEIROS or kind == "truque":
+            if not self.has_anim(self.roteiro[0][0]):
+                kind = "jump"   # folha nova não encontrada: usa o pulinho antigo
+            else:
+                ticks = len(self.roteiro) * self.roteiro_passo
         self.react, self.react_timer, self.react_len = kind, 0, ticks
         if kind == "bark": tocar("latido")
         if kind == "jump": tocar("goddard")
@@ -3045,7 +3592,17 @@ class Goddard(Pet):
         self.vx *= 0.8
         self.x = max(0, min(self.x + self.vx, self.sw - self.box))
         hop = 0
-        if self.react == "bark":
+        if self.react in self.ROTEIROS or self.react == "truque":
+            k = min(len(self.roteiro) - 1, self.react_timer // self.roteiro_passo)
+            anim, i = self.roteiro[k]
+            img = self.frame(anim, i, "goddard_idle")
+            if self.react == "brincar" and i == 1:
+                hop = 12 * vel()   # pulo atrás da bolinha
+            elif self.react == "banho" and i in (1, 2) and FX and self.react_timer % 6 == 0:
+                FX.bolhas(self.x + self.box / 2, self.y + self.box * 0.55, 3)
+            elif self.react == "comer" and i in (1, 2) and self.react_timer % 11 == 0:
+                tocar("bolinha")   # nham
+        elif self.react == "bark":
             # Boca abre junto com cada "au" do som (0-0,17 s e 0,34-0,54 s)
             k = self.react_timer
             aberta = k < 6 or 12 <= k < 19
@@ -3071,6 +3628,7 @@ class Goddard(Pet):
     def follow_logic(self):
         try:
             self.tick += 1
+            self.cuidar_logic()
             t = self.target
             # Jimmy acabou de pousar: Goddard vai comemorar quando chegar perto
             if self.target_was_air and not t.in_air:
@@ -3095,6 +3653,9 @@ class Goddard(Pet):
                 if t.phase == "blast" and not self.flying and not self.react:
                     self.start_react("surprise", 45)
                 self.target_phase = t.phase
+            if self.busca:
+                self.busca_logic(t)
+                return
             if self.react and not self.flying and self.react_logic():
                 return
             # Jetpack só se existir animação de voo (goddard_fly); senão corre pelo chão.
@@ -3266,6 +3827,15 @@ class Configuracoes(QWidget):
         linha = QHBoxLayout()
         linha.addWidget(self.tamanho)
         linha.addWidget(self.tamanho_lbl)
+        self.tamanho_gd = QSlider(Qt.Orientation.Horizontal)
+        self.tamanho_gd.setRange(50, 150)
+        self.tamanho_gd.setSingleStep(5)
+        self.tamanho_gd.setPageStep(10)
+        self.tamanho_gd_lbl = QLabel()
+        self.tamanho_gd_lbl.setMinimumWidth(40)
+        linha_gd = QHBoxLayout()
+        linha_gd.addWidget(self.tamanho_gd)
+        linha_gd.addWidget(self.tamanho_gd_lbl)
 
         self.viagem_min = QSpinBox(); self.viagem_min.setRange(1, 120); self.viagem_min.setSuffix(" min")
         self.viagem_max = QSpinBox(); self.viagem_max.setRange(1, 120); self.viagem_max.setSuffix(" min")
@@ -3278,6 +3848,7 @@ class Configuracoes(QWidget):
 
         form = QFormLayout()
         form.addRow("Tamanho:", linha)
+        form.addRow("🐶 Goddard:", linha_gd)
         self.vel_foguete = QComboBox()
         for key, nome, _ in VEL_FOGUETE:
             self.vel_foguete.addItem(nome, key)
@@ -3435,7 +4006,17 @@ class Configuracoes(QWidget):
         b_pas.clicked.connect(lambda: self.manager.jimmy and self.manager.jimmy.go_to_rocket(passeio=True))
         linha_bt2 = QHBoxLayout(); linha_bt2.addWidget(QLabel("Testar:")); linha_bt2.addWidget(b_inv); linha_bt2.addWidget(b_lha)
         linha_bt2.addWidget(b_pas)
+        self.goddard_pet = QCheckBox("🐶 Cuidar do Goddard")
+        self.meteoros = QCheckBox("☄️ Meteoros")
+        b_met = QPushButton("☄️ Testar")
+        b_met.clicked.connect(lambda: self.manager.start_meteoros())
+        self.busca_mouse = QCheckBox("🖱️ Buscar o ponteiro")
+        self.consertos = QCheckBox("🔧 Consertos")
+        linha_gm = QHBoxLayout(); linha_gm.addWidget(self.goddard_pet); linha_gm.addWidget(self.meteoros); linha_gm.addWidget(b_met)
+        linha_gm.addWidget(self.busca_mouse)
+        linha_gm.addWidget(self.consertos)
         form_ex.addRow(linha_bt2)
+        form_ex.addRow(linha_gm)
         self._festa_i = 0
 
         # Abas: Geral / Sons / Lembretes / Extras
@@ -3494,6 +4075,12 @@ class Configuracoes(QWidget):
         form_ml.addRow("Lembrete:", self.ml_texto)
         form_ml.addRow("Quando:", linha_ml)
         form_ml.addRow(linha_mb)
+        self.notas_lista = TList(); self.notas_lista.setMaximumHeight(100)
+        b_nota_del = QPushButton("🗑️ Apagar nota")
+        b_nota_del.clicked.connect(self.del_nota)
+        form_ml.addRow(QLabel("🗒️ Notas rápidas (clique no Jimmy → Nota rápida):"))
+        form_ml.addRow(self.notas_lista)
+        form_ml.addRow(b_nota_del)
 
         # Apps: frases quando você abre certos programas
         form_ap = QFormLayout()
@@ -3536,6 +4123,8 @@ class Configuracoes(QWidget):
         linha_rd = QHBoxLayout(); linha_rd.addWidget(self.rede_status); linha_rd.addStretch(); linha_rd.addWidget(b_visitar)
         form_on.addRow(linha_rd)
         form_on.addRow(nota_rede)
+        self.divulgar = QCheckBox("📺 O Jimmy lembra do canal @oevetech (1 vez a cada 12–36 h)")
+        form_on.addRow(self.divulgar)
         form_on.addRow(QLabel(f"Versão instalada: v{APP_VERSAO}"))
         form_on.addRow("GitHub:", self.repo)
         form_on.addRow(self.atualizar_on)
@@ -3543,10 +4132,26 @@ class Configuracoes(QWidget):
         form_on.addRow(linha_upd)
         form_on.addRow(self.upd_status)
 
+        # Datas: contagem regressiva
+        form_dt = QFormLayout()
+        self.ct_lista = TList(); self.ct_lista.setMaximumHeight(130)
+        self.ct_nome = QLineEdit(); self.ct_nome.setPlaceholderText("ex.: Viagem de férias")
+        self.ct_data = QDateEdit(); self.ct_data.setCalendarPopup(True); self.ct_data.setDisplayFormat("dd/MM/yyyy")
+        self.ct_data.setDate(QDate.currentDate().addDays(7))
+        b_ct_add = QPushButton("➕ Adicionar"); b_ct_del = QPushButton("🗑️ Remover")
+        b_ct_add.clicked.connect(self.add_contagem); b_ct_del.clicked.connect(self.del_contagem)
+        linha_ct = QHBoxLayout(); linha_ct.addWidget(b_ct_add); linha_ct.addWidget(b_ct_del)
+        form_dt.addRow(QLabel("⏳ O Jimmy avisa quantos dias faltam e comemora no dia."))
+        form_dt.addRow(self.ct_lista)
+        form_dt.addRow("Evento:", self.ct_nome)
+        form_dt.addRow("Data:", self.ct_data)
+        form_dt.addRow(linha_ct)
+
         abas = QTabWidget()
         abas.setUsesScrollButtons(True)
         for titulo, conteudo in (("Geral", form), ("Sons", form_som), ("Avisos", form_av), ("📝 Meus", form_ml),
-                                 ("Extras", form_ex), ("Apps", form_ap), ("Clima", form_cl), ("Online", form_on), ("🏆", form_cq)):
+                                 ("⏳ Datas", form_dt), ("Extras", form_ex), ("Apps", form_ap), ("Clima", form_cl),
+                                 ("Online", form_on), ("🏆", form_cq)):
             pagina = QWidget()
             conteudo.setVerticalSpacing(6)
             pagina.setLayout(conteudo)
@@ -3589,6 +4194,7 @@ class Configuracoes(QWidget):
         traduzir_janela(self)
         self.carregar()
         self.tamanho.valueChanged.connect(self.mudou_tamanho)
+        self.tamanho_gd.valueChanged.connect(self.mudou_tamanho)
         self.viagem_min.valueChanged.connect(self.salvar_viagem)
         self.viagem_max.valueChanged.connect(self.salvar_viagem)
         self.goddard.toggled.connect(self.salvar_goddard)
@@ -3608,7 +4214,7 @@ class Configuracoes(QWidget):
         self.idioma.currentIndexChanged.connect(self.salvar_idioma)
         for w in (self.pomo_foco, self.pomo_pausa):
             w.valueChanged.connect(self.salvar_extras)
-        for w in (self.ideias, self.ausente, self.datas, self.foguete_aleatorio, self.amigos, self.invencoes, self.lhamas, self.dancar, self.curiosidades, self.passeios,
+        for w in (self.ideias, self.ausente, self.datas, self.foguete_aleatorio, self.amigos, self.invencoes, self.lhamas, self.dancar, self.curiosidades, self.passeios, self.goddard_pet, self.meteoros, self.busca_mouse, self.divulgar, self.consertos,
                   self.estacoes, self.easter, self.apps_on, self.rede_on, self.atualizar_on, self.atualizar_auto,
                   self.bateria, self.frases, self.clima_on, self.chuva, self.tom_noite):
             w.toggled.connect(self.salvar_extras)
@@ -3618,18 +4224,21 @@ class Configuracoes(QWidget):
         self.saida.currentIndexChanged.connect(self.salvar_sons)
 
     def carregar(self):
-        widgets = (self.tamanho, self.viagem_min, self.viagem_max, self.goddard, self.botao,
+        widgets = (self.tamanho, self.tamanho_gd, self.viagem_min, self.viagem_max, self.goddard, self.botao,
                    self.sons, self.volume, self.saida, self.autostart, self.tela_cheia, self.dormir,
                    self.vel_foguete, self.som_jimmy, self.som_ronco, self.som_goddard, self.som_foguete, self.aviso_dormir,
                    self.avisos_on, self.som_avisos, self.ideias, self.ausente, self.ausente_min, self.foguete_aleatorio,
                    self.datas, self.aniv_dia, self.aniv_mes, self.amigos,
-                   self.invencoes, self.lhamas, self.dancar, self.curiosidades, self.estacoes, self.idioma, self.passeios, self.easter, self.apps_on,
+                   self.invencoes, self.lhamas, self.dancar, self.curiosidades, self.estacoes, self.idioma, self.passeios, self.goddard_pet, self.meteoros, self.busca_mouse, self.divulgar, self.consertos, self.easter, self.apps_on,
                    self.rede_on, self.atualizar_on, self.atualizar_auto,
                    self.monitor, self.pomo_foco, self.pomo_pausa, self.bateria, self.frases, self.clima_on, self.chuva,
                    self.tom_noite,
                    *[w for par in self.avisos.values() for w in par])
         for w in widgets: w.blockSignals(True)
         self.tamanho.setValue(int(CFG["tamanho"]))
+        self.tamanho_gd.setValue(int(CFG["tamanho_goddard"]))
+        self.tamanho_lbl.setText(f"{self.tamanho.value()}%")
+        self.tamanho_gd_lbl.setText(f"{self.tamanho_gd.value()}%")
         self.tamanho_lbl.setText(f"{int(CFG['tamanho'])}%")
         self.viagem_min.setValue(int(CFG["viagem_min"]))
         self.viagem_max.setValue(int(CFG["viagem_max"]))
@@ -3658,6 +4267,13 @@ class Configuracoes(QWidget):
         self.invencoes.setChecked(bool(CFG["invencoes"]))
         self.lhamas.setChecked(bool(CFG["lhamas"]))
         self.passeios.setChecked(bool(CFG["passeios"]))
+        self.goddard_pet.setChecked(bool(CFG["goddard_pet"]))
+        self.meteoros.setChecked(bool(CFG["meteoros"]))
+        self.carregar_notas()
+        self.busca_mouse.setChecked(bool(CFG["busca_mouse"]))
+        self.consertos.setChecked(bool(CFG["consertos"]))
+        self.divulgar.setChecked(bool(CFG["divulgar"]))
+        self.carregar_contagens()
         self.dancar.setChecked(bool(CFG["dancar"]))
         self.curiosidades.setChecked(bool(CFG["curiosidades"]))
         self.idioma.setCurrentIndex(max(0, self.idioma.findData(CFG["idioma"])))
@@ -3701,11 +4317,13 @@ class Configuracoes(QWidget):
         for w in widgets: w.blockSignals(False)
 
     def mudou_tamanho(self, valor):
-        self.tamanho_lbl.setText(f"{valor}%")
+        self.tamanho_lbl.setText(f"{self.tamanho.value()}%")
+        self.tamanho_gd_lbl.setText(f"{self.tamanho_gd.value()}%")
         self.aplicar_tamanho.start(400)
 
     def salvar_tamanho(self):
         CFG["tamanho"] = self.tamanho.value()
+        CFG["tamanho_goddard"] = self.tamanho_gd.value()
         save_cfg(CFG)
         self.manager.apply_scale()
 
@@ -3753,6 +4371,12 @@ class Configuracoes(QWidget):
         CFG["invencoes"] = self.invencoes.isChecked()
         CFG["lhamas"] = self.lhamas.isChecked()
         CFG["passeios"] = self.passeios.isChecked()
+        CFG["goddard_pet"] = self.goddard_pet.isChecked()
+        CFG["meteoros"] = self.meteoros.isChecked()
+        CFG["busca_mouse"] = self.busca_mouse.isChecked()
+        CFG["consertos"] = self.consertos.isChecked()
+        CFG["divulgar"] = self.divulgar.isChecked()
+        if not CFG["meteoros"]: self.manager.parar_meteoros()
         CFG["dancar"] = self.dancar.isChecked()
         CFG["curiosidades"] = self.curiosidades.isChecked()
         CFG["estacoes"] = self.estacoes.isChecked()
@@ -3836,6 +4460,20 @@ class Configuracoes(QWidget):
             self.clima_status.setText(f"{d['nome']}: agora {emoji} {desc}, {round(d['temp'])}°  "
                                       f"(hoje {round(d['min'])}° a {round(d['max'])}°)")
 
+    def carregar_notas(self):
+        self.notas_lista.clear()
+        for n in reversed(CFG["notas"]):
+            self.notas_lista.addItem(f"{n['data']} — {n['texto']}")
+        if not CFG["notas"]:
+            self.notas_lista.addItem("(nenhuma nota ainda)")
+
+    def del_nota(self):
+        row = self.notas_lista.currentRow()
+        if 0 <= row < len(CFG["notas"]):
+            del CFG["notas"][len(CFG["notas"]) - 1 - row]
+            save_cfg(CFG)
+            self.carregar_notas()
+
     def carregar_meus(self):
         self.ml_lista.clear()
         for l in sorted(CFG["meus_lembretes"], key=lambda l: l["hora"]):
@@ -3848,15 +4486,7 @@ class Configuracoes(QWidget):
         if not texto:
             self.ml_texto.setFocus()
             return
-        hora = self.ml_hora.time().toString("HH:mm")
-        l = {"texto": texto, "hora": hora, "rep": self.ml_rep.currentData(), "ultimo": ""}
-        if l["rep"] == "uma":
-            # Hoje, se ainda não passou do horário; senão amanhã
-            hoje = time.strftime("%Y-%m-%d")
-            amanha = time.strftime("%Y-%m-%d", time.localtime(time.time() + 86400))
-            l["data"] = hoje if hora > time.strftime("%H:%M") else amanha
-        CFG["meus_lembretes"].append(l)
-        save_cfg(CFG)
+        novo_lembrete(texto, self.ml_hora.time().toString("HH:mm"), self.ml_rep.currentData())
         self.ml_texto.clear()
         self.carregar_meus()
 
@@ -3943,6 +4573,35 @@ class Configuracoes(QWidget):
             nomes = ", ".join(v["nome"] for v in vivos.values()) or "nenhum ainda"
             self.rede_status.setText(f"PCs com o pet: {nomes}")
 
+    def carregar_contagens(self):
+        self.ct_lista.clear()
+        hoje = datetime.date.today()
+        for c in sorted(CFG["contagens"], key=lambda c: c["data"]):
+            dia = datetime.date.fromisoformat(c["data"])
+            faltam = (dia - hoje).days
+            quando = "é hoje! 🎉" if faltam == 0 else ("amanhã" if faltam == 1 else f"faltam {faltam} dias")
+            self.ct_lista.addItem(f"🗓️ {c['nome']} — {dia.strftime('%d/%m/%Y')} ({quando})")
+        if not CFG["contagens"]:
+            self.ct_lista.addItem("(nenhuma data ainda)")
+
+    def add_contagem(self):
+        nome = self.ct_nome.text().strip()
+        if not nome:
+            self.ct_nome.setFocus()
+            return
+        CFG["contagens"].append({"nome": nome, "data": self.ct_data.date().toString("yyyy-MM-dd"), "avisado": ""})
+        save_cfg(CFG)
+        self.ct_nome.clear()
+        self.carregar_contagens()
+
+    def del_contagem(self):
+        row = self.ct_lista.currentRow()
+        ordenadas = sorted(CFG["contagens"], key=lambda c: c["data"])
+        if 0 <= row < len(ordenadas):
+            CFG["contagens"].remove(ordenadas[row])
+            save_cfg(CFG)
+            self.carregar_contagens()
+
     def carregar_conquistas(self):
         self.cq_lista.clear()
         feitas = 0
@@ -4018,6 +4677,11 @@ class TrayManager:
         self.rain_left = 0
         self.timers = []         # "me avise em X min": {"fim", "min", "texto"}
         self.runners = []        # lhamas e Carl atravessando a tela
+        self.meteoros_vivos = []
+        self.onda = None         # chuva de meteoros em andamento
+        self.next_meteoros = time.time() + random.uniform(900, 1800)
+        gd_iniciar()
+        QTimer.singleShot(10000, self.check_contagens)
         self.medidor = MedidorSom()
         self.musica_t = 0        # segundos seguidos com música tocando
         self.silencio_t = 0
@@ -4175,6 +4839,7 @@ class TrayManager:
             fs = False
         if fs and not self.hidden_fs:
             if FX: FX.clear()
+            self.parar_meteoros()
             for pet in self.pets(): pet.pause()
             self.ball_was_visible = bool(BALL and BALL.isVisible())
             if BALL: BALL.hide(); BALL.timer.stop()
@@ -4184,10 +4849,42 @@ class TrayManager:
                 BALL.show(); BALL.timer.start(30)
         self.hidden_fs = fs
 
+    def start_busca_mouse(self):
+        j, g = self.jimmy, self.goddard
+        if not j or not g or j.sequence_state != "normal" or g.busca or g.flying: return
+        self.ultima_busca = time.time()
+        j.trip_timer.stop()
+        j.state = "idle"
+        j.sequence_state = "busca_mouse"
+        j.busca_t = 0
+        tocar("brainblast")
+        j.say("Tive uma ideia de invenção! 💡 Mas preciso daquele ponteiro...", 90)
+        QTimer.singleShot(2800, lambda: j.sequence_state == "busca_mouse" and j.say("Goddard, pega o ponteiro! 🐕", 80))
+        g.start_busca()
+
+    def fim_busca_mouse(self, entregou):
+        j = self.jimmy
+        if not j or j.sequence_state != "busca_mouse": return
+        j.sequence_state = "normal"
+        j.state = "idle"
+        if entregou:
+            j.say("Valeu, Goddard! Agora sim, vou inventar! 🛠️", 100)
+        else:
+            j.say("Opa, você voltou! Pode ficar com o mouse 😅", 90)
+
     def check_away(self):
         j = self.jimmy
         if not j or self.hidden_fs: return
         idle = idle_seconds()
+        # Às vezes, antes do cochilo, o Jimmy tem uma ideia e manda o Goddard buscar o ponteiro
+        if (CFG["busca_mouse"] and not self.away and idle >= 600 and not getattr(self, "busca_decidida", False)
+                and j.sequence_state == "normal" and j.state != "going" and not quieto()):
+            self.busca_decidida = True
+            if (random.random() < 0.3 and time.time() - getattr(self, "ultima_busca", 0) > 3600
+                    and self.goddard and not self.goddard.flying and self.goddard.isVisible()):
+                self.start_busca_mouse()
+                return
+        if idle < 3: self.busca_decidida = False
         if (CFG["ausente"] and not self.away and idle >= CFG["ausente_min"] * 60
                 and j.sequence_state == "normal" and j.state != "going"):
             self.away = True
@@ -4203,6 +4900,12 @@ class TrayManager:
     def check_musica(self):
         j = self.jimmy
         if not j or self.hidden_fs: return
+        if j.sequence_state == "danca" and time.time() < getattr(j, "danca_ate", 0):
+            return
+        if getattr(j, "danca_ate", 0) and j.sequence_state == "danca":
+            j.danca_ate = 0
+            j.end_danca()
+            return
         if not CFG["dancar"]:
             if j.sequence_state == "danca": j.end_danca()
             return
@@ -4220,6 +4923,7 @@ class TrayManager:
 
     def tick_1s(self):
         self.check_musica()
+        self.check_jogo_bola()
         self.check_apps()
         self.sec_count = getattr(self, "sec_count", 0) + 1
         if self.rede and self.sec_count % 10 == 0: self.rede.anunciar()
@@ -4288,16 +4992,158 @@ class TrayManager:
             if self.config_window and self.config_window.isVisible():
                 self.config_window.carregar_meus()
 
+    # ---------------- menu do clique no Jimmy ----------------
+    def menu_clique(self, pos):
+        j, g = self.jimmy, self.goddard
+        menu = TMenu()
+        menu.addAction("🎾 Brincar de bolinha com o Goddard", self.brincar_bolinha)
+        menu.addAction("📝 Novo lembrete...", self.dialogo_lembrete)
+        self.add_timer_menu(menu)
+        prox = menu.addMenu("📋 Próximos lembretes")
+        agora, tm = time.strftime("%H:%M"), time.localtime()
+        hoje = sorted((l for l in CFG["meus_lembretes"] if lembrete_hoje(l, tm) and l["hora"] > agora), key=lambda l: l["hora"])
+        for l in hoje[:3]:
+            prox.addAction(f"⏰ {l['hora']} — {l['texto']}").setEnabled(False)
+        if not hoje:
+            prox.addAction("(nenhum para hoje)").setEnabled(False)
+        prox.addSeparator()
+        prox.addAction("⚙️ Ver todos", self.open_config)
+        menu.addSeparator()
+        jogos = menu.addMenu("🎮 Brincar")
+        jogos.addAction("🚀 Decolar agora", lambda: j and j.launch_now())
+        jogos.addAction("🛸 Passeio de foguete", lambda: j and j.go_to_rocket(passeio=True))
+        jogos.addAction("🔧 Consertar o foguete", lambda: j and j.go_to_rocket(conserto=True))
+        jogos.addAction("☄️ Chuva de meteoros", self.start_meteoros)
+        jogos.addAction("🖱️ Goddard, pega o ponteiro!", self.start_busca_mouse)
+        jogos.addAction("💃 Dançar", self.dancar_agora)
+        jogos.addAction("🧪 Inventar algo", lambda: j and j.sequence_state == "normal" and j.start_invencao())
+        if g and CFG["goddard_pet"]:
+            sub = menu.addMenu("🐶 Goddard")
+            sub.addAction("🛢️ Dar óleo", lambda: g.cuidar("oleo"))
+            sub.addAction("🛁 Dar banho", lambda: g.cuidar("banho"))
+            sub.addAction("🎾 Brincar", lambda: g.cuidar("brincar"))
+        menu.addSeparator()
+        menu.addAction("🗒️ Nota rápida...", self.nota_rapida)
+        menu.addAction("🎲 Decida por mim...", self.decida_por_mim)
+        menu.addAction("💧 Bebi água!", self.bebi_agua)
+        menu.exec(pos)
+
+    def brincar_bolinha(self):
+        """O Jimmy joga, o Goddard traz; cada vez mais longe, de 2 a 5 rodadas."""
+        j, g = self.jimmy, self.goddard
+        if not BALL or not j or not g or not g.isVisible() or getattr(self, "jogo_bola", None): return
+        self.jogo_bola = {"rodadas": random.randint(2, 5), "feitas": 0}
+        self.jogar_bola()
+
+    def jogar_bola(self):
+        jb, j = self.jogo_bola, self.jimmy
+        if not jb or not j: return
+        if j.sequence_state != "normal" or j.in_air:
+            QTimer.singleShot(1500, self.jogar_bola)   # ocupado: joga quando terminar
+            return
+        k = vel()
+        lado = 1 if j.x + j.box / 2 < j.sw / 2 else -1   # para o lado com mais espaço
+        espaco = (j.sw - j.x - j.box) if lado == 1 else j.x
+        frac = 0.3 + 0.65 * jb["feitas"] / max(1, jb["rodadas"] - 1)   # cada vez mais longe
+        j.direction = lado
+        j.vx = 0.0
+        j.state = "idle"
+        BALL.arremessar(j.x + j.box / 2 + lado * j.box * 0.3, j.y + j.box * 0.45,
+                        lado * max(4 * k, espaco * frac / 48), -random.uniform(9, 12) * k)
+        tocar("bolinha")
+        jb["feitas"] += 1
+        frases = ["Vai buscar, Goddard! 🎾", "Mais longe agora! 💪", "Laaaaá longe! 🚀", "Essa foi longe! 😄", "Última! Vai! 🎾"]
+        j.say(frases[-1] if jb["feitas"] == jb["rodadas"] and jb["rodadas"] > 2 else frases[min(jb["feitas"] - 1, 3)], 60)
+
+    def check_jogo_bola(self):
+        jb = getattr(self, "jogo_bola", None)
+        if not jb: return
+        g, j = self.goddard, self.jimmy
+        if not BALL.isVisible() or not g or not j:
+            self.jogo_bola = None   # guardaram a bolinha
+            return
+        # O Goddard trouxe e soltou na frente do Jimmy
+        if not BALL.thrown and BALL.held_by is None and g.fetch is None:
+            if jb["feitas"] < jb["rodadas"]:
+                jb["feitas_espera"] = jb.get("feitas_espera", 0) + 1
+                if jb["feitas_espera"] >= 2:          # um segundinho de festa antes do próximo
+                    jb["feitas_espera"] = 0
+                    self.jogar_bola()
+            else:
+                self.jogo_bola = None
+                j.say("Ufa, cansei! Boa, Goddard! 🐕", 90)
+                QTimer.singleShot(5000, lambda: BALL.isVisible() and not getattr(self, "jogo_bola", None) and BALL.put_away())
+
+    def dancar_agora(self):
+        j = self.jimmy
+        if not j or j.sequence_state != "normal": return
+        j.danca_ate = time.time() + 15
+        j.start_danca()
+
+    def dialogo_lembrete(self):
+        d = QDialog()
+        d.setWindowTitle(tr("📝 Novo lembrete"))
+        d.setWindowFlags(d.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
+        f = QFormLayout(d)
+        texto = QLineEdit(); texto.setPlaceholderText(tr("ex.: Reunião com a equipe"))
+        hora = QTimeEdit(QTime.currentTime().addSecs(3600)); hora.setDisplayFormat("HH:mm")
+        repete = QComboBox()
+        for key, nome in REPETICOES: repete.addItem(tr(nome), key)
+        botoes = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        botoes.accepted.connect(d.accept); botoes.rejected.connect(d.reject)
+        f.addRow(tr("Lembrete:"), texto)
+        f.addRow(tr("Quando:"), hora)
+        f.addRow("", repete)
+        f.addRow(botoes)
+        if d.exec() != QDialog.DialogCode.Accepted or not texto.text().strip(): return
+        l = novo_lembrete(texto.text().strip(), hora.time().toString("HH:mm"), repete.currentData())
+        if self.jimmy: self.jimmy.say(f"Anotado! 📝 Te lembro às {l['hora']}.", 90)
+        if self.config_window and self.config_window.isVisible(): self.config_window.carregar_meus()
+
+    def nota_rapida(self):
+        texto, ok = QInputDialog.getText(None, tr("🗒️ Nota rápida"), tr("O que eu anoto?"))
+        if not ok or not texto.strip(): return
+        CFG["notas"].append({"texto": texto.strip(), "data": time.strftime("%d/%m %H:%M")})
+        save_cfg(CFG)
+        if self.jimmy: self.jimmy.say("Guardei a nota! 🗒️ Fica em Configurações → 📝 Meus.", 90)
+        if self.config_window and self.config_window.isVisible(): self.config_window.carregar_notas()
+
+    def decida_por_mim(self):
+        texto, ok = QInputDialog.getText(None, tr("🎲 Decida por mim"), tr("Opções separadas por vírgula:"))
+        opcoes = [o.strip() for o in texto.replace(";", ",").split(",") if o.strip()] if ok else []
+        j = self.jimmy
+        if not opcoes or not j: return
+        tocar("brainblast")
+        j.say(f"⚡ Calculando... Escolhi: {random.choice(opcoes)}! 🎲", 110)
+
+    def bebi_agua(self):
+        hoje = time.strftime("%Y-%m-%d")
+        a = CFG["agua_hoje"]
+        if a.get("dia") != hoje: a.clear(); a.update({"dia": hoje, "n": 0})
+        a["n"] += 1
+        save_cfg(CFG)
+        stat("copos")
+        if self.jimmy: self.jimmy.say(f"💧 Boa! {a['n']} copo(s) de água hoje.", 80)
+
     # ---------------- menu do botão direito ----------------
-    def quick_menu(self, pos):
+    def quick_menu(self, pos, alvo=None):
         menu = TMenu()
         j = self.jimmy
+        g = self.goddard
+        if alvo is not None and alvo is g and CFG["goddard_pet"]:
+            menu.addAction("🛢️ Dar óleo", lambda: g.cuidar("oleo"))
+            menu.addAction("🎾 Brincar", lambda: g.cuidar("brincar"))
+            menu.addAction("🛁 Dar banho", lambda: g.cuidar("banho"))
+            menu.addSeparator()
         menu.addAction("🚀 Lançar o foguete", lambda: j and j.launch_now())
         menu.addAction("🎾 Bolinha", self.toggle_ball)
         menu.addAction("👫 Chamar um amigo", lambda: self.spawn_friend())
         menu.addAction("🧪 Inventar algo", lambda: j and j.sequence_state == "normal" and j.start_invencao())
         menu.addAction("🦙 Soltar as lhamas", self.solta_lhamas)
         menu.addAction("🛸 Passeio de foguete", lambda: j and j.go_to_rocket(passeio=True))
+        menu.addAction("🔧 Consertar o foguete", lambda: j and j.go_to_rocket(conserto=True))
+        menu.addAction("☄️ Chuva de meteoros", lambda: self.start_meteoros())
+        menu.addAction("🖱️ Goddard, pega o ponteiro!", self.start_busca_mouse)
         menu.addAction("⚡ Brain Blast", lambda: j and j.sequence_state == "normal" and j.start_blast())
         menu.addSeparator()
         menu.addAction(self.pomo_action.text(), self.toggle_pomodoro)
@@ -4542,8 +5388,27 @@ class TrayManager:
             j.start_viagem(pid, info["nome"])
             self.next_viagem = time.time() + random.uniform(900, 1800)
 
+    def check_canal(self):
+        if not CFG["divulgar"]: return
+        agora = time.time()
+        if not CFG["divulga_prox"]:
+            CFG["divulga_prox"] = agora + random.uniform(12, 36) * 3600
+            save_cfg(CFG)
+        elif agora >= CFG["divulga_prox"] and not quieto() and not self.hidden_fs:
+            self.queue.append(("canal", random.choice(FRASES_CANAL), "ideia_feliz", False))
+            CFG["divulga_prox"] = agora + random.uniform(12, 36) * 3600
+            save_cfg(CFG)
+
     def minute_tick(self):
         self.check_battery()
+        self.check_canal()
+        if SONS: SONS.verificar_saida()
+        self.check_contagens()
+        # Goddard: os medidores caem com o tempo
+        if CFG["goddard_pet"]:
+            for k, q in GD_QUEDA.items(): gd_add(k, -q)
+            CFG["gd_stats"]["ts"] = time.time()
+            save_cfg(CFG)
         # Estação do ano: uma "chuvinha" de folhas/pétalas/neve a cada ~10 min
         if (CFG["estacoes"] and estacao_atual() and int(time.time() // 60) % 10 == 5 and not self.rain_timer.isActive()
                 and not self.hidden_fs and not quieto()):
@@ -4652,7 +5517,88 @@ class TrayManager:
                 and j.state != "going" and not self.friend and not quieto() and not self.hidden_fs):
             self.visitar_agora()
 
+    # ---------------- chuva de meteoros ----------------
+    def start_meteoros(self):
+        j = self.jimmy
+        if self.onda or not j or self.hidden_fs: return
+        self.onda = {"total": random.randint(6, 10), "lancados": 0, "acertos": 0, "fim": 0}
+        self.next_meteoros = time.time() + random.uniform(1200, 2400)
+        if j.sequence_state == "normal": j.say("Chuva de meteoros! Clica neles! ☄️", 100)
+        QTimer.singleShot(1800, self.lancar_meteoro)
+
+    def lancar_meteoro(self):
+        o, j = self.onda, self.jimmy
+        if not o or not j or self.hidden_fs: return
+        o["lancados"] += 1
+        alvo = j.x + j.box / 2 + random.uniform(-220, 220)
+        x = alvo + random.uniform(-500, 500)
+        chao = (chao_em(alvo) or j.sh) - 12
+        self.meteoros_vivos.append(Meteoro(max(20, min(x, j.sw - 20)), alvo, chao, self.meteoro_fim))
+        if o["lancados"] < o["total"]:
+            QTimer.singleShot(int(random.uniform(1000, 2000)), self.lancar_meteoro)
+
+    def meteoro_fim(self, met, acertou):
+        if met in self.meteoros_vivos: self.meteoros_vivos.remove(met)
+        o = self.onda
+        if not o: return
+        if acertou:
+            o["acertos"] += 1
+            stat("meteoros")
+        o["fim"] += 1
+        if o["fim"] >= o["total"]:
+            a, t = o["acertos"], o["total"]
+            self.onda = None
+            novo = a > CFG.get("meteoros_recorde", 0)
+            if novo:
+                CFG["meteoros_recorde"] = a
+                save_cfg(CFG)
+            j = self.jimmy
+            if a == t: texto = f"Você salvou o dia! {a}/{t} ☄️ Perfeito!"
+            elif a >= t / 2: texto = f"Boa! Você pegou {a}/{t} meteoros! ☄️"
+            else: texto = f"Ufa... só {a}/{t}. Na próxima a gente pega! ☄️"
+            if novo and a: texto += " 🏆 Recorde!"
+            if j: self.queue.append(("meteoros", texto, "ideia_feliz" if a >= t / 2 else "ideia_susto", True))
+
+    def parar_meteoros(self):
+        for m in list(self.meteoros_vivos):
+            m.timer.stop(); m.close()
+        self.meteoros_vivos = []
+        self.onda = None
+
+    # ---------------- contagem regressiva ----------------
+    def check_contagens(self):
+        hoje = datetime.date.today()
+        mudou = False
+        for c in list(CFG["contagens"]):
+            try:
+                dia = datetime.date.fromisoformat(c["data"])
+            except ValueError:
+                continue
+            faltam = (dia - hoje).days
+            if faltam < 0:
+                CFG["contagens"].remove(c)   # já passou
+                mudou = True
+                continue
+            if c.get("avisado") == hoje.isoformat() or time.localtime().tm_hour < 8:
+                continue
+            if faltam == 0:
+                self.queue.append(("party", f"🎉 Chegou o dia: {c['nome']}!", "confete", False))
+            elif faltam == 1:
+                self.queue.append(("contagem", f"⏳ Amanhã é o dia: {c['nome']}! 🎉", "ideia_ideia", False))
+            elif faltam <= 7 or faltam in (30, 15, 10) or faltam % 7 == 0:
+                self.queue.append(("contagem", f"⏳ Faltam {faltam} dias para: {c['nome']}!", "ideia_ideia", False))
+            else:
+                continue
+            c["avisado"] = hoje.isoformat()
+            mudou = True
+        if mudou:
+            save_cfg(CFG)
+            if self.config_window and self.config_window.isVisible(): self.config_window.carregar_contagens()
+
     def check_friend(self):
+        if (CFG["meteoros"] and not self.onda and time.time() >= self.next_meteoros and not quieto()
+                and not self.hidden_fs and self.jimmy and self.jimmy.sequence_state == "normal"):
+            self.start_meteoros()
         self.check_viagem()
         if (CFG["lhamas"] and not quieto() and not self.hidden_fs and not self.runners
                 and time.time() >= self.next_lhama and self.jimmy and self.jimmy.sequence_state != "visit"):
@@ -4708,6 +5654,7 @@ class TrayManager:
         for pet in self.pets():
             pet.keep_on_top()
         if BALL: _topmost(BALL)
+        for m in self.meteoros_vivos: _topmost(m)
 
     def apply_scale(self):
         # Novo tamanho: limpa os tamanhos calculados e recria os pets

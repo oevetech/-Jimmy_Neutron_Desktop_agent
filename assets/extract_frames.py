@@ -314,6 +314,36 @@ def external_frame(entry, crops):
     return crop.resize((max(1, round(crop.width * f)), max(1, round(crop.height * f))), Image.LANCZOS)
 
 
+def tirar_buracos(crop, y0, y1, boca=None):
+    """Fundo branco preso dentro do desenho (entre o braço e o corpo, entre as pernas):
+    apaga as manchas brancas cujo centro fica na faixa de altura [y0, y1] da figura
+    (fora dela ficam os olhos, dentes e tênis, que também são brancos).
+    boca = [y_max, x_min, x_max]: manchas acima de y_max com x nessa faixa são dentes e ficam."""
+    a = np.array(crop)
+    al = a[:, :, 3] > 0
+    ys = np.nonzero(al.any(axis=1))[0]
+    if not len(ys): return crop
+    top, alt = ys[0], max(1, ys[-1] - ys[0])
+    xs = np.nonzero(al.any(axis=0))[0]
+    esq, larg = xs[0], max(1, xs[-1] - xs[0])
+    branco = al & (a[:, :, :3].min(axis=2) > 235)
+    lab, comps = label(branco)
+    apagar = np.zeros(branco.shape, bool)
+    for c in comps:
+        cy, cx = ((c[2] + c[4]) / 2 - top) / alt, ((c[1] + c[3]) / 2 - esq) / larg
+        if boca and cy < boca[0] and boca[1] <= cx <= boca[2]: continue
+        if c[0] >= 8 and y0 <= cy <= y1:
+            apagar |= np.isin(lab, c[5])
+    if not apagar.any(): return crop
+    # Leva junto a borda clarinha (antisserrilhado) em volta da mancha
+    for _ in range(2):
+        g = apagar.copy()
+        g[1:] |= apagar[:-1]; g[:-1] |= apagar[1:]; g[:, 1:] |= apagar[:, :-1]; g[:, :-1] |= apagar[:, 1:]
+        apagar = g & al & (a[:, :, :3].min(axis=2) > 195)
+    a[apagar, 3] = 0
+    return Image.fromarray(a)
+
+
 def export(sheet_name, spec):
     cells, crops = crops_of(os.path.join(BASE, sheet_name), spec.get("sem_baloes", False), spec.get("grade"))
     # Mesmo tamanho de tela para todos os quadros da folha (mantém a proporção entre eles)
@@ -345,9 +375,17 @@ def export(sheet_name, spec):
                 crop = crops[i["i"]].copy()
                 for x0, y0, x1, y1 in i.get("apagar", []):
                     crop.paste((0, 0, 0, 0), (x0, y0, x1, y1))
+                # Só o branco dentro do retângulo (ex.: fundo preso entre o braço e o pescoço)
+                for x0, y0, x1, y1 in i.get("limpar_branco", []):
+                    a = np.array(crop)
+                    reg = a[y0:y1, x0:x1]
+                    reg[reg[:, :, :3].min(axis=2) > 200, 3] = 0
+                    crop = Image.fromarray(a)
                 crop = crop.crop(crop.getbbox())
             else:
                 crop = external_frame(i, crops) if isinstance(i, dict) else crops[i]
+            if "buracos" in spec:
+                crop = tirar_buracos(crop, *spec["buracos"], boca=spec.get("boca"))
             canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
             x = (side - crop.width) // 2
             y = side - crop.height - 4 if anchor == "bottom" else (side - crop.height) // 2

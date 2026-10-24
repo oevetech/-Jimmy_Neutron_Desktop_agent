@@ -23,7 +23,17 @@ O pet se atualiza sozinho quando sai uma versão nova (dá para desligar em ⚙�
 - 🚀 **Foguete**: de tempos em tempos o Jimmy agarra o foguete e decola; lá em cima o foguete explode
   e ele desce de paraquedas, levado pelo vento (às vezes uma rajada joga ele de volta pra cima!).
   O Goddard voa atrás de jetpack. Clique no foguete para lançar, ou arraste para mudar de lugar.
-- 🐕 **Goddard**: segue o Jimmy, busca a 🎾 bolinha, late, dorme junto e dança.
+- 🛸 **Passeio de foguete**: o Jimmy monta no foguete e dá um voo rasante pela tela, acenando e comemorando.
+  🔧 De vez em quando ele também faz a manutenção do foguete (com solda e faíscas).
+- 🐕 **Goddard**: segue o Jimmy, busca a 🎾 bolinha, late, dorme junto, dança e faz truques.
+  É um **bichinho virtual**: passe o mouse para ver 🛢️ óleo, 🎾 diversão e 🛁 limpeza; clique com o botão
+  direito nele para dar óleo, brincar ou dar banho. Quando você fica um tempo longe do PC,
+  ele pode até 🖱️ buscar o ponteiro do mouse para o Jimmy!
+- 🖱️ **Clique rápido no Jimmy**: menu com jogo de bolinha (cada arremesso mais longe), novo lembrete,
+  timer, nota rápida, "decida por mim" e contador de copos d'água.
+- ☄️ **Chuva de meteoros**: clique nos meteoros antes que caiam (com recorde).
+- ⏳ **Contagem regressiva**: cadastre datas e o Jimmy avisa quantos dias faltam e comemora no dia.
+- 🌬️ Clique no Jimmy enquanto ele desce de paraquedas e uma rajada de vento joga ele de volta pra cima.
 - 👫 **Amigos**: Carl, Sheen, Libby e Cindy aparecem para conversar. E as 🦙 lhamas do Carl fogem pela tela.
 - ⚡ **Brain Blast**, 🧪 invenções (até o raio encolhedor no Goddard!), 💃 dança quando toca música no PC.
 - 😴 Dorme à noite, cochila quando você sai do PC e diz "Voltou! 👋" quando você volta.
@@ -34,7 +44,14 @@ O pet se atualiza sozinho quando sai uma versão nova (dá para desligar em ⚙�
 - 📡 Com o pet em dois PCs da mesma rede, o Jimmy **visita o outro PC**.
 - 🌎 Português e inglês, vários monitores, tom de noite, sombras, fumaça, faíscas...
 
-Clique com o **botão direito** em qualquer personagem para o menu rápido. Tudo é configurável no ícone da bandeja → ⚙️ Configurações.
+Clique com o **botão direito** em qualquer personagem para o menu rápido. Tudo é configurável no ícone da bandeja → ⚙️ Configurações
+(inclusive o tamanho dos dois e a proporção só do Goddard).
+
+## 🤝 Contribuir
+
+Ideias, correções e novas animações são bem-vindas! Abra uma *Issue* ou mande um *Pull Request*.
+Para animações novas: folha em **PNG com fundo transparente**, figuras separadas por espaço vazio,
+e uma entrada no `assets/anim_config.json` (veja a seção Animações abaixo).
 
 ## 🔒 Privacidade
 
