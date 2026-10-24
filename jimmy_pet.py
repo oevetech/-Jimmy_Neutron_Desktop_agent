@@ -4022,7 +4022,10 @@ class Friend(Pet):
                 if self.correndo:
                     self.show_anim(self.anim("corre"), int(self.walk_dist / (16 * v)), flip=self.direction == -1)
                 else:
-                    self.show_anim(self.anim("anda"), int(self.walk_dist / (9 * v)), flip=self.direction == -1)
+                    # Ciclo curto (só 2 poses, como o da Cindy) troca mais devagar, senão os braços ficam "piscando"
+                    self.frame(self.anim("anda"), 0, None)
+                    passo = 9 if len(Pet.anim_cache.get(self.anim("anda"), [])) > 2 else 26
+                    self.show_anim(self.anim("anda"), int(self.walk_dist / (passo * v)), flip=self.direction == -1)
                 self.update_pos(self.x, self.ground_y - bob)
                 if self.state == "saindo" and (self.x < -self.box - 5 or self.x > self.sw + 5):
                     self.timer.stop()
@@ -5789,7 +5792,7 @@ class TrayManager:
 
     def start_resgate(self):
         j = self.jimmy
-        if (not j or j.sequence_state != "normal" or j.state == "going" or getattr(self, "carl_resgate", None) or self.hidden_fs
+        if (not j or j.sequence_state != "normal" or j.state == "going" or self.carl_na_tela() or self.hidden_fs
                 or self.friend or not Pet.frame(None, "planeta", 0, None) or not j.rocket.isVisible()):
             return
         self.ultima_busca = time.time()
@@ -5810,6 +5813,12 @@ class TrayManager:
 
     def fim_carl(self):
         self.carl_resgate = None
+
+    def carl_na_tela(self):
+        """Só pode haver um Carl por vez (resgate, correndo atrás da lhama ou de visita)."""
+        return bool(getattr(self, "carl_resgate", None)
+                    or any(r.anim == "carl_desespero" for r in getattr(self, "runners", []))
+                    or (getattr(self, "friend", None) and self.friend.key == "carl"))
 
     def start_game(self):
         if getattr(self, "game", None) or not self.jimmy: return
@@ -6508,6 +6517,8 @@ class TrayManager:
         lhama.show()
         self.runners.append(lhama)
         def carl():
+            # Só existe um Carl: se ele já está na tela (resgate ou visita), essa lhama foge sozinha
+            if self.carl_na_tela() or self.hidden_fs: return
             c = Runner("carl_desespero", lado, random.uniform(6.5, 7.5),
                        fala=random.choice(["Minhas lhamas! 🦙", "Volta aqui, lhaminha! 😱", "Alguém segura essa lhama! 🦙"]),
                        on_done=self.runner_done)
@@ -6619,7 +6630,7 @@ class TrayManager:
     def spawn_friend(self, nome=None):
         j = self.jimmy
         if self.friend or not j or j.sequence_state != "normal": return
-        nome = nome or random.choice([n for n in CONVERSAS if n != self.last_friend])
+        nome = nome or random.choice([n for n in CONVERSAS if n != self.last_friend and not (n == "carl" and self.carl_na_tela())])
         self.last_friend = nome
         j.state = "idle"
         self.friend = Friend(nome, j, self.friend_done)
