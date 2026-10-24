@@ -344,6 +344,25 @@ def tirar_buracos(crop, y0, y1, boca=None):
     return Image.fromarray(a)
 
 
+def limpar_pontos(crop, pontos):
+    """Apaga a mancha branca que contém cada ponto (x, y) do quadro: fundo preso entre o
+    braço, a cabeça e o guarda-chuva, que não dá para separar dos olhos só pela altura."""
+    a = np.array(crop)
+    al = a[:, :, 3] > 0
+    branco = al & (a[:, :, :3].min(axis=2) > 235)
+    lab, _ = label(branco)
+    apagar = np.zeros(branco.shape, bool)
+    for x, y in pontos:
+        if lab[y, x] >= 0:
+            apagar |= lab == lab[y, x]
+    for _ in range(2):
+        g = apagar.copy()
+        g[1:] |= apagar[:-1]; g[:-1] |= apagar[1:]; g[:, 1:] |= apagar[:, :-1]; g[:, :-1] |= apagar[:, 1:]
+        apagar = g & al & (a[:, :, :3].min(axis=2) > 195)
+    a[apagar, 3] = 0
+    return Image.fromarray(a)
+
+
 def export(sheet_name, spec):
     if spec.get("inteira"):
         # A imagem toda é um quadro só (ex.: planeta com nuvens e luas soltas em volta)
@@ -389,6 +408,8 @@ def export(sheet_name, spec):
                 crop = crop.crop(crop.getbbox())
             else:
                 crop = external_frame(i, crops) if isinstance(i, dict) else crops[i]
+            if isinstance(i, int) and str(i) in spec.get("limpar_pontos", {}):
+                crop = limpar_pontos(crop, spec["limpar_pontos"][str(i)])
             if "buracos" in spec:
                 crop = tirar_buracos(crop, *spec["buracos"], boca=spec.get("boca"))
             canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
