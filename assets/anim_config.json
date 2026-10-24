@@ -1,0 +1,895 @@
+{
+  "jimmy_neutron_spritesheet.png": {
+    "animations": {
+      "jimmy_idle": {
+        "frames": [
+          0,
+          7
+        ],
+        "anchor": "bottom"
+      },
+      "jimmy_fall": {
+        "frames": [
+          {
+            "file": "extracted/jimmy_fall.png",
+            "match": [
+              5,
+              12
+            ]
+          }
+        ],
+        "anchor": "center",
+        "box": 165
+      },
+      "jimmy_parachute": {
+        "frames": [
+          {
+            "file": "extracted/jimmy_1.png",
+            "match": [
+              6,
+              13
+            ]
+          }
+        ],
+        "anchor": "center",
+        "box": 175
+      }
+    }
+  },
+  "foguete_jimmy_fundo_transparente.png": {
+    "animations": {
+      "rocket_engine": {
+        "frames": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "anchor": "center"
+      },
+      "rocket_liftoff": {
+        "frames": [
+          7,
+          6,
+          5,
+          4
+        ],
+        "anchor": "bottom"
+      },
+      "rocket_crack": {
+        "frames": [
+          8
+        ],
+        "anchor": "center"
+      },
+      "rocket_explode": {
+        "frames": [
+          9,
+          10,
+          11
+        ],
+        "anchor": "center",
+        "box": 208
+      }
+    },
+    "box": 348
+  },
+  "extracted/caminhando.jpg": {
+    "fill": 0.962,
+    "animations": {
+      "jimmy_walk": {
+        "frames": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13
+        ],
+        "anchor": "bottom"
+      }
+    }
+  },
+  "extracted/cachorro_sprite.png": {
+    "animations": {
+      "goddard_walk": {
+        "frames": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "anchor": "bottom"
+      },
+      "goddard_run": {
+        "frames": [
+          4,
+          5,
+          6,
+          7
+        ],
+        "anchor": "bottom"
+      },
+      "goddard_idle": {
+        "frames": [
+          8
+        ],
+        "anchor": "bottom"
+      },
+      "goddard_sniff": {
+        "frames": [
+          11
+        ],
+        "anchor": "bottom"
+      },
+      "goddard_sit": {
+        "frames": [
+          12,
+          13,
+          14
+        ],
+        "anchor": "bottom"
+      },
+      "goddard_happy": {
+        "frames": [
+          15,
+          16,
+          17
+        ],
+        "anchor": "bottom"
+      }
+    },
+    "box": 170
+  },
+  "extracted/animacoes_jimmy_foguete.png": {
+    "box": 190,
+    "animations": {
+      "jimmy_board": {
+        "frames": [
+          0,
+          1
+        ],
+        "anchor": "bottom"
+      },
+      "jimmy_hang": {
+        "frames": [
+          2,
+          3,
+          4,
+          {
+            "file": "extracted/beea55c2-61ed-48a5-8f69-0ab2682cb065.png",
+            "match": [
+              3,
+              4,
+              6
+            ]
+          },
+          6
+        ],
+        "anchor": "bottom"
+      }
+    }
+  },
+  "extracted/foguete_deitado.png": {
+    "box": 159,
+    "animations": {
+      "rocket_parked": {
+        "frames": [
+          0
+        ],
+        "anchor": "bottom"
+      }
+    }
+  },
+  "extracted/cachorro_sprite_2.png": {
+    "box": 170,
+    "animations": {
+      "goddard_bark": {
+        "frames": [
+          9,
+          12
+        ],
+        "anchor": "bottom"
+      },
+      "goddard_surprise": {
+        "frames": [
+          4
+        ],
+        "anchor": "bottom"
+      },
+      "goddard_run_happy": {
+        "frames": [
+          5,
+          6,
+          7,
+          8
+        ],
+        "anchor": "bottom"
+      },
+      "goddard_jump": {
+        "frames": [
+          10,
+          11
+        ],
+        "anchor": "bottom"
+      }
+    }
+  },
+  "extracted/goddard_voando_transparente.png": {
+    "box": 140,
+    "animations": {
+      "goddard_takeoff": {
+        "frames": [
+          0,
+          1,
+          2
+        ],
+        "anchor": "bottom"
+      },
+      "goddard_fly": {
+        "frames": [
+          3,
+          4
+        ],
+        "anchor": "center"
+      },
+      "goddard_hover": {
+        "frames": [
+          5,
+          9
+        ],
+        "anchor": "center"
+      },
+      "goddard_hover_scared": {
+        "frames": [
+          6,
+          7,
+          8
+        ],
+        "anchor": "center"
+      },
+      "goddard_fly_fast": {
+        "frames": [
+          10,
+          11,
+          12,
+          13,
+          14
+        ],
+        "anchor": "center"
+      }
+    }
+  },
+  "extracted/jimmy_dormindo.jpg": {
+    "box": 161,
+    "animations": {
+      "jimmy_yawn": {
+        "frames": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "anchor": "bottom"
+      },
+      "jimmy_lie": {
+        "frames": [
+          5
+        ],
+        "anchor": "bottom"
+      },
+      "jimmy_sleep": {
+        "frames": [
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "anchor": "bottom"
+      },
+      "jimmy_doze_sit": {
+        "frames": [
+          11,
+          12,
+          13
+        ],
+        "anchor": "bottom"
+      },
+      "jimmy_doze_stand": {
+        "frames": [
+          14,
+          15
+        ],
+        "anchor": "bottom"
+      }
+    }
+  },
+  "extracted/jimmyAvisos.png": {
+    "box": 180,
+    "animations": {
+      "aviso_agua": {
+        "frames": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "anchor": "bottom"
+      },
+      "aviso_pausa": {
+        "frames": [
+          4,
+          5,
+          6
+        ],
+        "anchor": "bottom"
+      },
+      "aviso_dormir": {
+        "frames": [
+          6,
+          7
+        ],
+        "anchor": "bottom"
+      },
+      "aviso_comer": {
+        "frames": [
+          8,
+          9,
+          10,
+          11
+        ],
+        "anchor": "bottom"
+      },
+      "aviso_exercicio": {
+        "frames": [
+          12,
+          13,
+          14,
+          15
+        ],
+        "anchor": "bottom"
+      }
+    }
+  },
+  "extracted/jimmyIdeia.png": {
+    "box": 152,
+    "animations": {
+      "ideia_vira": {
+        "frames": [
+          0
+        ],
+        "anchor": "bottom"
+      },
+      "ideia_pensa": {
+        "frames": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "anchor": "bottom"
+      },
+      "ideia_faisca": {
+        "frames": [
+          5,
+          6,
+          7
+        ],
+        "anchor": "bottom"
+      },
+      "ideia_susto": {
+        "frames": [
+          8
+        ],
+        "anchor": "bottom"
+      },
+      "ideia_blast": {
+        "frames": [
+          9,
+          10,
+          11
+        ],
+        "anchor": "bottom"
+      },
+      "ideia_feliz": {
+        "frames": [
+          12,
+          13
+        ],
+        "anchor": "bottom"
+      },
+      "ideia_ideia": {
+        "frames": [
+          14,
+          15,
+          16,
+          17,
+          18,
+          19
+        ],
+        "anchor": "bottom"
+      }
+    }
+  },
+  "extracted/amigos_Jimmy.png": {
+    "box": 145,
+    "sem_baloes": true,
+    "animations": {
+      "amigo_carl_parado": {
+        "frames": [
+          2
+        ]
+      },
+      "amigo_carl_fala": {
+        "frames": [
+          3,
+          2
+        ]
+      },
+      "amigo_carl_acena": {
+        "frames": [
+          1,
+          4
+        ]
+      },
+      "amigo_sheen_parado": {
+        "frames": [
+          8
+        ]
+      },
+      "amigo_sheen_fala": {
+        "frames": [
+          7,
+          8
+        ]
+      },
+      "amigo_sheen_acena": {
+        "frames": [
+          9
+        ]
+      },
+      "amigo_libby_parado": {
+        "frames": [
+          12
+        ]
+      },
+      "amigo_libby_fala": {
+        "frames": [
+          13,
+          14
+        ]
+      },
+      "amigo_libby_acena": {
+        "frames": [
+          15
+        ]
+      }
+    }
+  },
+  "extracted/amigo1.png": {
+    "box": 142,
+    "sem_baloes": true,
+    "animations": {
+      "amigo_carl_anda": {
+        "frames": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      "amigo_carl_corre": {
+        "frames": [
+          6,
+          7,
+          8,
+          9,
+          10
+        ]
+      },
+      "amigo_carl_pula": {
+        "frames": [
+          13,
+          14
+        ]
+      },
+      "amigo_carl_ri": {
+        "frames": [
+          15,
+          16
+        ]
+      }
+    }
+  },
+  "extracted/amigo2.png": {
+    "box": 142,
+    "sem_baloes": true,
+    "animations": {
+      "amigo_sheen_anda": {
+        "frames": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      "amigo_sheen_corre": {
+        "frames": [
+          6,
+          7,
+          8,
+          9,
+          10
+        ]
+      },
+      "amigo_sheen_pula": {
+        "frames": [
+          13,
+          14
+        ]
+      },
+      "amigo_sheen_ri": {
+        "frames": [
+          15,
+          16
+        ]
+      }
+    }
+  },
+  "extracted/amigo3.png": {
+    "box": 140,
+    "sem_baloes": true,
+    "animations": {
+      "amigo_libby_anda": {
+        "frames": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "amigo_libby_pula": {
+        "frames": [
+          13,
+          14
+        ]
+      },
+      "amigo_libby_ri": {
+        "frames": [
+          15,
+          16
+        ]
+      }
+    }
+  },
+  "extracted/jimmyChovendo.png": {
+    "box": 152,
+    "animations": {
+      "chuva_percebe": {
+        "frames": [
+          0
+        ]
+      },
+      "chuva_abre": {
+        "frames": [
+          1,
+          2
+        ]
+      },
+      "chuva_parado": {
+        "frames": [
+          3
+        ]
+      },
+      "chuva_anda": {
+        "frames": [
+          4,
+          7
+        ]
+      },
+      "chuva_vento": {
+        "frames": [
+          5,
+          6
+        ]
+      },
+      "chuva_fecha": {
+        "frames": [
+          8,
+          9
+        ]
+      }
+    }
+  },
+  "extracted/invensoes.png": {
+    "box": 201,
+    "sem_baloes": true,
+    "lado_usados": true,
+    "animations": {
+      "inv_painel": {
+        "frames": [
+          0,
+          1
+        ]
+      },
+      "inv_aperta": {
+        "frames": [
+          2
+        ]
+      },
+      "inv_treme": {
+        "frames": [
+          3
+        ]
+      },
+      "inv_fumaca": {
+        "frames": [
+          4
+        ]
+      },
+      "inv_mira": {
+        "frames": [
+          5
+        ]
+      },
+      "inv_raio": {
+        "frames": [
+          7
+        ]
+      },
+      "inv_ri": {
+        "frames": [
+          10
+        ]
+      },
+      "inv_oculos": {
+        "frames": [
+          13
+        ]
+      },
+      "inv_controle": {
+        "frames": [
+          14
+        ]
+      }
+    }
+  },
+  "extracted/lhamascarl.png": {
+    "box": 168,
+    "sem_baloes": true,
+    "animations": {
+      "lhama_marrom": {
+        "frames": [
+          0,
+          1,
+          4,
+          10
+        ]
+      },
+      "lhama_branca": {
+        "frames": [
+          2,
+          3,
+          12
+        ]
+      },
+      "carl_desespero": {
+        "frames": [
+          5,
+          6,
+          8,
+          11,
+          13,
+          14
+        ]
+      },
+      "carl_panico": {
+        "frames": [
+          7
+        ]
+      }
+    }
+  },
+  "extracted/cachorroDormindo.png": {
+    "box": 139,
+    "animations": {
+      "goddard_boceja": {
+        "frames": [
+          15,
+          16
+        ]
+      },
+      "goddard_deita": {
+        "frames": [
+          1,
+          2
+        ]
+      },
+      "goddard_dorme": {
+        "frames": [
+          3,
+          6,
+          7
+        ]
+      },
+      "goddard_cochila_pe": {
+        "frames": [
+          8
+        ]
+      },
+      "goddard_espreguica": {
+        "frames": [
+          9
+        ]
+      },
+      "goddard_sono": {
+        "frames": [
+          17
+        ]
+      }
+    }
+  },
+  "extracted/dancandoJimmy.jpg": {
+    "sem_baloes": true,
+    "lado_usados": true,
+    "animations": {
+      "jimmy_danca": {
+        "frames": [
+          0,
+          2,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13,
+          15,
+          16,
+          17,
+          19,
+          22,
+          23,
+          25,
+          27,
+          29,
+          30,
+          31,
+          34
+        ],
+        "box": 171
+      },
+      "goddard_danca": {
+        "frames": [
+          1,
+          3,
+          8,
+          10,
+          12,
+          14,
+          18,
+          20,
+          24,
+          26,
+          28,
+          32,
+          35
+        ],
+        "box": 137
+      }
+    }
+  },
+  "extracted/cindy.jpg": {
+    "box": 143,
+    "sem_baloes": true,
+    "animations": {
+      "amigo_cindy_anda": {
+        "frames": [
+          0,
+          9
+        ]
+      },
+      "amigo_cindy_parado": {
+        "frames": [
+          1
+        ]
+      },
+      "amigo_cindy_fala": {
+        "frames": [
+          3,
+          5,
+          7
+        ]
+      },
+      "amigo_cindy_acena": {
+        "frames": [
+          4
+        ]
+      },
+      "amigo_cindy_aponta": {
+        "frames": [
+          2
+        ]
+      },
+      "amigo_cindy_ri": {
+        "frames": [
+          6
+        ]
+      }
+    }
+  },
+  "extracted/jimmyfoguuete2.jpg": {
+    "box": 200,
+    "sem_baloes": true,
+    "lado_usados": true,
+    "grade": [
+      [
+        0,
+        200,
+        5
+      ],
+      [
+        205,
+        369,
+        5
+      ],
+      [
+        369,
+        572,
+        7
+      ]
+    ],
+    "animations": {
+      "voo_pendura": {
+        "frames": [
+          1,
+          2
+        ]
+      },
+      "voo_escala": {
+        "frames": [
+          {
+            "i": 3,
+            "apagar": [
+              [
+                62,
+                158,
+                118,
+                177
+              ]
+            ]
+          }
+        ]
+      },
+      "voo_senta": {
+        "frames": [
+          4
+        ]
+      },
+      "voo_monta": {
+        "frames": [
+          5,
+          6,
+          7,
+          8,
+          9
+        ]
+      }
+    }
+  }
+}
