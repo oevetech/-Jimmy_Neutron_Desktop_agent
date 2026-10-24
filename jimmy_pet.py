@@ -5795,6 +5795,7 @@ class TrayManager:
         self.ultima_busca = time.time()
         pl = Planeta(random.uniform(0.25, 0.75) * j.sw)
         self.carl_resgate = CarlResgate(j, self.fim_carl)
+        self.carl_resgate.show()
         j.start_resgate(pl)
 
     def fim_resgate(self, lhama_anim):
