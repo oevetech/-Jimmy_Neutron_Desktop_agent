@@ -423,6 +423,9 @@ EN = {
     "Uau! Boa viagem! 🚀": "Wow! Have a nice trip! 🚀",
     "Minhas lhamas! 🦙": "My llamas! 🦙", "Volta aqui, lhaminha! 😱": "Come back, little llama! 😱",
     "Alguém segura essa lhama! 🦙": "Somebody stop that llama! 🦙",
+    "ULTRA LORD! 🦸": "ULTRA LORD! 🦸", "Pelos poderes de Ultra Lord! ⚡": "By the power of Ultra Lord! ⚡",
+    "Nada detém o Ultra Lord! 💪": "Nothing stops Ultra Lord! 💪", "Lá vai o Sheen de novo... 🙄": "There goes Sheen again... 🙄",
+    "Sheen, isso é só uma fantasia! 😅": "Sheen, that's just a costume! 😅", "Vai, Ultra Lord! 😂": "Go, Ultra Lord! 😂",
     # --- avisos, datas, pomodoro ---
     "Hora de beber água! 💧": "Time to drink some water! 💧", "Faça uma pausa e descanse os olhos 😌": "Take a break and rest your eyes 😌",
     "Não esqueça de comer! 🍎": "Don't forget to eat! 🍎", "Hora de se mexer um pouco! 💪": "Time to move around a bit! 💪",
@@ -4076,16 +4079,17 @@ class Friend(Pet):
         except Exception as e: log_error(e)
 
 class Runner(Pet):
-    """Atravessa a tela correndo (lhama fugindo, Carl atrás) e some do outro lado."""
+    """Atravessa a tela correndo (lhama fugindo, Carl atrás, Sheen de Ultra Lord) e some do outro lado."""
     shadow_ratio = 0.5
 
-    def __init__(self, anim, direction, speed, fala=None, on_done=None):
+    def __init__(self, anim, direction, speed, fala=None, on_done=None, comentario=None):
         super().__init__(anim, IMG_DIR, None, 0, 0)
         self.anim = anim
         self.direction = direction
         self.speed = speed
         self.fala = fala
         self.on_done = on_done
+        self.comentario = comentario      # o que o Jimmy diz quando ele passa
         self.show_anim(anim, 0, flip=direction == -1)
         self.x = -self.box if direction == 1 else self.sw
         self.update_pos(self.x, self.ground_y)
@@ -4115,8 +4119,8 @@ class Runner(Pet):
             meio = self.x + self.box / 2
             if m and m.jimmy and not self.passou_jimmy and abs(meio - (m.jimmy.x + m.jimmy.box / 2)) < 60:
                 self.passou_jimmy = True
-                if self.bubble and m.jimmy.sequence_state == "normal" and m.jimmy.say_timer == 0:
-                    m.jimmy.say(random.choice(["De novo, Carl? 🙄", "As lhamas fugiram outra vez! 🦙", "Corre, Carl! 😂"]), 90)
+                if self.comentario and m.jimmy.sequence_state == "normal" and m.jimmy.say_timer == 0:
+                    m.jimmy.say(random.choice(self.comentario), 90)
             if m and m.goddard and not self.passou_goddard and abs(meio - (m.goddard.x + m.goddard.box / 2)) < 80:
                 self.passou_goddard = True
                 if not self.bubble and not m.goddard.flying and not m.goddard.react:
@@ -5645,6 +5649,7 @@ class TrayManager:
         self.musica_t = 0        # segundos seguidos com música tocando
         self.silencio_t = 0
         self.next_lhama = time.time() + random.uniform(300, 900)
+        self.next_sheen = time.time() + random.uniform(600, 1500)
         self.rocket = None
         self.jimmy = None
         self.goddard = None
@@ -6156,6 +6161,7 @@ class TrayManager:
         menu.addAction("👫 Chamar um amigo", lambda: self.spawn_friend())
         menu.addAction("🧪 Inventar algo", lambda: j and j.sequence_state == "normal" and j.start_invencao())
         menu.addAction("🦙 Soltar as lhamas", self.solta_lhamas)
+        menu.addAction("🦸 Ultra Lord!", self.solta_sheen)
         menu.addAction("🛸 Passeio de foguete", lambda: j and j.go_to_rocket(passeio=True))
         menu.addAction("🔧 Consertar o foguete", lambda: j and j.go_to_rocket(conserto=True))
         menu.addAction("☄️ Chuva de meteoros", lambda: self.start_meteoros())
@@ -6521,11 +6527,25 @@ class TrayManager:
             if self.carl_na_tela() or self.hidden_fs: return
             c = Runner("carl_desespero", lado, random.uniform(6.5, 7.5),
                        fala=random.choice(["Minhas lhamas! 🦙", "Volta aqui, lhaminha! 😱", "Alguém segura essa lhama! 🦙"]),
-                       on_done=self.runner_done)
+                       on_done=self.runner_done,
+                       comentario=["De novo, Carl? 🙄", "As lhamas fugiram outra vez! 🦙", "Corre, Carl! 😂"])
             c.show()
             self.runners.append(c)
         QTimer.singleShot(1600, carl)
         self.next_lhama = time.time() + random.uniform(600, 1500)
+
+    def solta_sheen(self):
+        # O Sheen vestido de Ultra Lord passa correndo (ou "voando") pela tela
+        if self.runners or self.hidden_fs or (self.friend and self.friend.key == "sheen"): return
+        if not Pet.frame(None, "sheen_ultralord_corre", 0, None): return
+        anim = random.choice(["sheen_ultralord_corre", "sheen_ultralord_voa"])
+        s = Runner(anim, random.choice([-1, 1]), random.uniform(7, 8.5),
+                   fala=random.choice(["ULTRA LORD! 🦸", "Pelos poderes de Ultra Lord! ⚡", "Nada detém o Ultra Lord! 💪"]),
+                   on_done=self.runner_done,
+                   comentario=["Lá vai o Sheen de novo... 🙄", "Sheen, isso é só uma fantasia! 😅", "Vai, Ultra Lord! 😂"])
+        s.show()
+        self.runners.append(s)
+        self.next_sheen = time.time() + random.uniform(1200, 2700)
 
     def runner_done(self, r):
         if r in self.runners: self.runners.remove(r)
@@ -6622,6 +6642,9 @@ class TrayManager:
         if (CFG["lhamas"] and not quieto() and not self.hidden_fs and not self.runners
                 and time.time() >= self.next_lhama and self.jimmy and self.jimmy.sequence_state != "visit"):
             self.solta_lhamas()
+        if (CFG["amigos"] and not quieto() and not self.hidden_fs and not self.runners
+                and time.time() >= self.next_sheen and self.jimmy and self.jimmy.sequence_state != "visit"):
+            self.solta_sheen()
         j = self.jimmy
         if self.friend or not CFG["amigos"] or not j or self.hidden_fs or quieto(): return
         if time.time() >= self.next_friend and j.sequence_state == "normal" and j.state != "going":
