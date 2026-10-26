@@ -3,4 +3,15 @@ dist/
 __pycache__/
 *.pyc
 *.bak*
+*.blend1
 assets/**/*_conferencia.png
+scratch/
+tools3d/foguete/raw_frames/
+tools3d/foguete/raw_voo/
+tools3d/foguete/raw_voo_v2/
+tools3d/foguete/vistas_novo_jimmy/
+tools3d/foguete/backup_voo3d_gemini/
+tools3d/sheen/raw_fbx/
+tools3d/jimmy_corrigido_cabelo.fbx
+tools3d/jimmy_mixamo.zip
+assets/3d_fbx/

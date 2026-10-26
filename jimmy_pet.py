@@ -20,8 +20,9 @@ import subprocess
 from PyQt6.QtWidgets import (QApplication, QLabel, QWidget, QPushButton, QSystemTrayIcon, QMenu,
                              QSlider, QSpinBox, QCheckBox, QVBoxLayout, QHBoxLayout, QFormLayout,
                              QComboBox, QGroupBox, QTabWidget, QLineEdit, QListWidget, QTimeEdit,
-                             QInputDialog, QMessageBox, QFileDialog, QDateEdit, QDialog, QDialogButtonBox)
-from PyQt6.QtCore import Qt, QTimer, QPoint, QSize, QUrl, pyqtSignal, QObject, QTime, QDate
+                             QInputDialog, QMessageBox, QFileDialog, QDateEdit, QDialog, QDialogButtonBox, QProgressBar)
+from PyQt6.QtCore import Qt, QTimer, QPoint, QSize, QUrl, pyqtSignal, QObject, QTime, QDate, QThread
+import zipfile
 from PyQt6.QtMultimedia import QSoundEffect, QMediaDevices
 from PyQt6.QtNetwork import QUdpSocket, QHostAddress
 from PyQt6.QtGui import QPixmap, QTransform, QIcon, QPainter, QColor, QRadialGradient, QPolygon, QPen, QCursor, QDesktopServices
@@ -48,6 +49,7 @@ def log_error(e):
         f.write("\n---------------------\n")
 
 ANIM_DIR = os.path.join(RES_DIR, "anim")
+ANIM_3D_DIR = os.path.join(DATA_DIR, "anim_3d")
 # Configurações salvas pela janela "⚙️ Configurações" do ícone da bandeja
 CONFIG_FILE = os.path.join(DATA_DIR, "config_pet.json")
 _OLD_CONFIG = os.path.join("C:" + os.sep, "Jimmy", "config_pet.json")
@@ -79,7 +81,7 @@ CONFIG_PADRAO = {"tamanho": 75, "tamanho_goddard": 100, "viagem_min": 1, "viagem
                  "aviso_pausa": True, "aviso_pausa_min": 50,
                  "aviso_comer": True, "aviso_comer_min": 240,
                  "aviso_exercicio": True, "aviso_exercicio_min": 90,
-                 "aviso_dormir": True}
+                 "aviso_dormir": True, "modo_3d": False, "pacote_3d_url": "https://github.com/oevetech/-Jimmy_Neutron_Desktop_agent/releases/latest/download/pacote_3d.zip"}
 
 # Velocidade da subida do foguete (Rápido = como era antes)
 VEL_FOGUETE = [("bem_lento", "Bem lento", 0.35), ("medio", "Médio", 0.55),
@@ -87,6 +89,37 @@ VEL_FOGUETE = [("bem_lento", "Bem lento", 0.35), ("medio", "Médio", 0.55),
 
 def vel_foguete():
     return {k: f for k, _, f in VEL_FOGUETE}.get(CFG["vel_foguete"], 1.0)
+
+class BaixadorPacote3D(QThread):
+    progresso = pyqtSignal(int)
+    concluido = pyqtSignal(str)
+    erro = pyqtSignal(str)
+
+    def __init__(self, url, destino_zip):
+        super().__init__()
+        self.url = url
+        self.destino_zip = destino_zip
+
+    def run(self):
+        try:
+            req = urllib.request.Request(self.url, headers={"User-Agent": "JimmyNeutronPet"})
+            with urllib.request.urlopen(req, timeout=45) as resp:
+                total = int(resp.headers.get("Content-Length", 0))
+                baixado = 0
+                chunk_size = 32768
+                with open(self.destino_zip, "wb") as f:
+                    while True:
+                        bloco = resp.read(chunk_size)
+                        if not bloco:
+                            break
+                        f.write(bloco)
+                        baixado += len(bloco)
+                        if total > 0:
+                            self.progresso.emit(int(baixado * 100 / total))
+            self.concluido.emit(self.destino_zip)
+        except Exception as e:
+            self.erro.emit(str(e))
+
 
 # De vez em quando (12 a 36 h) o Jimmy lembra do canal de quem criou o pet
 CANAL_URL = "https://www.youtube.com/@oevetech"
@@ -2500,14 +2533,11 @@ class Pet(QWidget):
         path = img_name if os.path.isabs(img_name) else os.path.join(self.image_folder, img_name)
         key = (img_name, self.box)
         if key not in self.pix_cache:
-            print(f"TENTANDO CARREGAR: {path}") # Log para depuração no terminal
             if not os.path.exists(path):
-                print(f"ERRO: Arquivo não encontrado: {path}")
                 self.label.setText("❓")
                 return
             pixmap = QPixmap(path)
             if pixmap.isNull():
-                print(f"ERRO: Imagem {path} está corrompida ou é inválida.")
                 self.label.setText("🖼️")
                 return
             self.pix_cache[key] = pixmap.scaled(self.box, self.box, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
@@ -2542,15 +2572,24 @@ class Pet(QWidget):
 
     anim_cache = {}
 
+    @staticmethod
+    def get_anim_folder(anim):
+        if CFG.get("modo_3d", False):
+            f3d = os.path.join(ANIM_3D_DIR, anim)
+            if os.path.isdir(f3d) and any(f.lower().endswith(".png") for f in os.listdir(f3d)):
+                return f3d
+        return os.path.join(ANIM_DIR, anim)
+
     def frame(self, anim, i, fallback):
         """Caminho do quadro i (em loop) da animação; usa a imagem antiga se a pasta não existir."""
-        if anim not in Pet.anim_cache:
-            folder = os.path.join(ANIM_DIR, anim)
+        cache_key = (anim, bool(CFG.get("modo_3d", False)))
+        if cache_key not in Pet.anim_cache:
+            folder = Pet.get_anim_folder(anim)
             files = sorted(f for f in os.listdir(folder) if f.lower().endswith(".png")) if os.path.isdir(folder) else []
-            Pet.anim_cache[anim] = [os.path.join(folder, f) for f in files]
+            Pet.anim_cache[cache_key] = [os.path.join(folder, f) for f in files]
             if not files:
-                log_error(FileNotFoundError(f"animação '{anim}' não encontrada em {ANIM_DIR}"))
-        frames = Pet.anim_cache[anim]
+                log_error(FileNotFoundError(f"animação '{anim}' não encontrada em {folder}"))
+        frames = Pet.anim_cache[cache_key]
         return frames[i % len(frames)] if frames else fallback
 
     def set_box(self, size, anchor="bottom"):
@@ -2568,18 +2607,20 @@ class Pet(QWidget):
     box_cache = {}
 
     def anim_box(self, anim):
-        """Tamanho da janela para a animação (meta.json gerado pelo extract_frames.py) x ESCALA."""
-        if anim not in Pet.box_cache:
+        """Tamanho da janela para a animação (meta.json) x ESCALA."""
+        cache_key = (anim, bool(CFG.get("modo_3d", False)))
+        if cache_key not in Pet.box_cache:
             box = 150
+            folder = Pet.get_anim_folder(anim)
             try:
-                with open(os.path.join(ANIM_DIR, anim, "meta.json"), encoding="utf-8") as f:
+                with open(os.path.join(folder, "meta.json"), encoding="utf-8") as f:
                     box = json.load(f).get("box", 150)
             except (OSError, ValueError):
                 pass
             # O Goddard ainda tem a proporção dele (em relação ao Jimmy)
             prop = CFG["tamanho_goddard"] / 100 if anim.startswith("goddard_") else 1.0
-            Pet.box_cache[anim] = int(round(box * ESCALA * prop))
-        return Pet.box_cache[anim]
+            Pet.box_cache[cache_key] = int(round(box * ESCALA * prop))
+        return Pet.box_cache[cache_key]
 
     def show_anim(self, anim, i, flip=False, angle=0, anchor="bottom", fallback=None):
         """Mostra o quadro i da animação já no tamanho certo dela."""
@@ -2601,10 +2642,9 @@ class Pet(QWidget):
 
     def has_anim(self, anim):
         # Só pergunta se existe (não registra erro: várias animações são opcionais)
-        if anim not in Pet.anim_cache:
-            folder = os.path.join(ANIM_DIR, anim)
-            if not (os.path.isdir(folder) and any(f.lower().endswith(".png") for f in os.listdir(folder))):
-                return False
+        folder = Pet.get_anim_folder(anim)
+        if not (os.path.isdir(folder) and any(f.lower().endswith(".png") for f in os.listdir(folder))):
+            return False
         return bool(self.frame(anim, 0, None))
 
     def keep_on_top(self):
@@ -3175,11 +3215,15 @@ class Jimmy(Pet):
         self.flight_timer = 0
         self.vx = self.drag_vx = 0.0
         self.setCursor(Qt.CursorShape.ClosedHandCursor)
-        self.show_anim("jimmy_fall", 0, anchor="center", fallback="jimmy_fall")
+        hang_anim = "jimmy_hang" if self.has_anim("jimmy_hang") else "jimmy_fall"
+        self.show_anim(hang_anim, 0, anchor="center", fallback="jimmy_fall")
         gp = e.globalPosition()
         self.drag_off = (gp.x() - self.x, gp.y() - self.y)
         self.clique = (time.time(), gp.x(), gp.y(), self.x, self.y)
         self.last_drag_x = gp.x()
+        self.last_drag_y = gp.y()
+        self.grabMouse()
+        e.accept()
 
     def rajada_clique(self):
         v = vel()
@@ -3204,12 +3248,16 @@ class Jimmy(Pet):
         gp = e.globalPosition()
         self.drag_vx = gp.x() - self.last_drag_x
         self.last_drag_x = gp.x()
+        self.last_drag_y = gp.y()
         nx = max(0, min(gp.x() - self.drag_off[0], self.sw - self.box))
         ny = max(0, min(gp.y() - self.drag_off[1], self.ground_y))
         self.update_pos(nx, ny)
+        e.accept()
 
     def mouseReleaseEvent(self, e):
         if self.sequence_state != "dragged": return
+        self.releaseMouse()
+        e.accept()
         t0, gx, gy, x0, y0 = self.clique
         gp = e.globalPosition()
         if time.time() - t0 < 0.4 and math.hypot(gp.x() - gx, gp.y() - gy) < 6:
@@ -3709,7 +3757,8 @@ class Jimmy(Pet):
                 # Pendurado no mouse, se debatendo e balançando com o movimento
                 self.flight_timer += 1
                 self.drag_vx *= 0.85
-                self.show_anim("jimmy_fall", self.flight_timer // 4, flip=flip,
+                hang_anim = "jimmy_hang" if self.has_anim("jimmy_hang") else "jimmy_fall"
+                self.show_anim(hang_anim, self.flight_timer // 4, flip=flip,
                                angle=max(-25, min(25, -self.drag_vx * 2)), anchor="center", fallback="jimmy_fall")
 
             elif self.sequence_state == "boarding":
@@ -4343,9 +4392,9 @@ class Goddard(Pet):
             self.flying, self.fly_timer = True, 0
             tocar("jetpack_liga")
         # Você mexeu no mouse: o Goddard desiste (a busca acaba)
-        if b["fase"] == "indo" and math.hypot(cx - b["cursor"][0], cy - b["cursor"][1]) > 40:
+        if b["fase"] == "indo" and math.hypot(cx - b["cursor"][0], cy - b["cursor"][1]) > 50:
             return self.fim_busca(False)
-        if b["fase"] == "levando" and math.hypot(cx - b["solto"][0], cy - b["solto"][1]) > 25:
+        if b["fase"] == "levando" and math.hypot(cx - b["solto"][0], cy - b["solto"][1]) > 50:
             return self.fim_busca(False)
         self.fly_timer += 1
         som_loop("jetpack", self.fly_timer > 8)
@@ -4385,16 +4434,20 @@ class Goddard(Pet):
             FX.smoke(self.x + self.box * random.uniform(0.3, 0.6), self.y + self.box * 0.92, random.uniform(2.5, 4.5),
                      life=22, vx=-self.vx * 0.2, vy=1.2, gray=random.randint(215, 240), alpha=0.4, grow=1.5)
         mx, my = self.boca()
-        perto = math.hypot(gx - self.x, gy - self.y) < 14 * v
-        if b["fase"] == "indo" and self.fly_timer > 18 and perto:
-            # Nhac! Mordeu o ponteiro
-            b["fase"] = "levando"
-            tocar("latido")
-            stat("ponteiros")
-        if b["fase"] == "levando":
+        if b["fase"] == "indo":
+            perto = math.hypot(gx - self.x, gy - self.y) < 14 * v
+            if self.fly_timer > 18 and perto:
+                # Nhac! Mordeu o ponteiro
+                b["fase"] = "levando"
+                b["solto"] = (int(mx), int(my))
+                QCursor.setPos(int(mx) + OX, int(my) + OY)
+                tocar("latido")
+                stat("ponteiros")
+        elif b["fase"] == "levando":
             b["solto"] = (int(mx), int(my))
             QCursor.setPos(int(mx) + OX, int(my) + OY)
-            if self.fly_timer > 18 and perto and abs(self.vx) < 1.5 * v:
+            perto_jimmy = math.hypot(gx - self.x, gy - self.y) < 18 * v
+            if self.fly_timer > 18 and perto_jimmy and abs(self.vx) < 2.0 * v:
                 self.fim_busca(True)
 
     def fim_busca(self, entregou):
@@ -4805,6 +4858,20 @@ class Configuracoes(QWidget):
         self.tela_cheia = QCheckBox("Esconder em jogos/vídeos em tela cheia")
         self.dormir = QCheckBox("Dormir à noite (22h às 6h) e cochilar")
 
+        # Visual 3D
+        self.modo_3d = QCheckBox("✨ Ativar animações em 3D do Jimmy")
+        self.btn_pacote_3d = QPushButton("📥 Baixar Pacote 3D")
+        self.lbl_pacote_3d = QLabel("Verificando...")
+        self.lbl_pacote_3d.setStyleSheet("color: gray; font-size: 11px;")
+        self.progresso_3d = QProgressBar()
+        self.progresso_3d.setRange(0, 100)
+        self.progresso_3d.setVisible(False)
+        self.progresso_3d.setFixedHeight(14)
+        linha_3d = QHBoxLayout()
+        linha_3d.addWidget(self.btn_pacote_3d)
+        linha_3d.addWidget(self.lbl_pacote_3d)
+        linha_3d.addStretch()
+
         form = QFormLayout()
         form.addRow("Tamanho:", linha)
         form.addRow("🐶 Goddard:", linha_gd)
@@ -4824,6 +4891,9 @@ class Configuracoes(QWidget):
         form.addRow(self.autostart)
         form.addRow(self.tela_cheia)
         form.addRow(self.dormir)
+        form.addRow(self.modo_3d)
+        form.addRow("Visual 3D:", linha_3d)
+        form.addRow("", self.progresso_3d)
         self.monitor = QComboBox()
         self.monitor.addItem("Principal", -1)
         if len(QApplication.screens()) > 1:
@@ -5164,6 +5234,8 @@ class Configuracoes(QWidget):
         self.autostart.toggled.connect(set_autostart)
         self.tela_cheia.toggled.connect(self.salvar_tela_cheia)
         self.dormir.toggled.connect(self.salvar_dormir)
+        self.modo_3d.toggled.connect(self.salvar_modo_3d)
+        self.btn_pacote_3d.clicked.connect(self.gerenciar_pacote_3d)
         self.vel_foguete.currentIndexChanged.connect(self.salvar_extras)
         for w in (self.som_jimmy, self.som_ronco, self.som_goddard, self.som_foguete, self.aviso_dormir,
                   self.avisos_on, self.som_avisos):
@@ -5208,6 +5280,10 @@ class Configuracoes(QWidget):
         self.autostart.setChecked(autostart_enabled())
         self.tela_cheia.setChecked(bool(CFG["esconder_tela_cheia"]))
         self.dormir.setChecked(bool(CFG["dormir"]))
+        self.modo_3d.blockSignals(True)
+        self.modo_3d.setChecked(bool(CFG.get("modo_3d", False)))
+        self.modo_3d.blockSignals(False)
+        self.atualizar_ui_3d()
         self.sons.setChecked(bool(CFG["sons"]))
         self.som_jimmy.setChecked(bool(CFG["som_jimmy"]))
         self.som_ronco.setChecked(bool(CFG["som_ronco"]))
@@ -5384,6 +5460,110 @@ class Configuracoes(QWidget):
             spin.setEnabled(on)
         self.aviso_dormir.setEnabled(on)
         self.som_avisos.setEnabled(on)
+
+    def pacote_3d_instalado(self):
+        if not os.path.isdir(ANIM_3D_DIR):
+            return False
+        f = os.path.join(ANIM_3D_DIR, "jimmy_idle")
+        return os.path.isdir(f) and any(x.lower().endswith(".png") for x in os.listdir(f))
+
+    def atualizar_ui_3d(self):
+        instalado = self.pacote_3d_instalado()
+        if instalado:
+            self.lbl_pacote_3d.setText("✅ Instalado (3D pronto)")
+            self.lbl_pacote_3d.setStyleSheet("color: #2e7d32; font-size: 11px; font-weight: bold;")
+            self.btn_pacote_3d.setText("🗑️ Remover Pacote 3D")
+            self.btn_pacote_3d.setEnabled(True)
+            self.modo_3d.setEnabled(True)
+        else:
+            self.lbl_pacote_3d.setText("Não instalado (2D clássico ativo)")
+            self.lbl_pacote_3d.setStyleSheet("color: gray; font-size: 11px;")
+            self.btn_pacote_3d.setText("📥 Baixar Pacote 3D (612 KB)")
+            self.btn_pacote_3d.setEnabled(True)
+            self.modo_3d.setEnabled(False)
+            if self.modo_3d.isChecked():
+                self.modo_3d.blockSignals(True)
+                self.modo_3d.setChecked(False)
+                self.modo_3d.blockSignals(False)
+                CFG["modo_3d"] = False
+                save_cfg(CFG)
+
+    def salvar_modo_3d(self, marcado):
+        CFG["modo_3d"] = marcado
+        save_cfg(CFG)
+        self.manager.apply_modo_3d()
+
+    def gerenciar_pacote_3d(self):
+        if self.pacote_3d_instalado():
+            r = QMessageBox.question(self, tr("Remover Pacote 3D"),
+                                     tr("Deseja remover o pacote 3D e voltar para os gráficos 2D clássicos?"),
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            if r == QMessageBox.StandardButton.Yes:
+                self.modo_3d.blockSignals(True)
+                self.modo_3d.setChecked(False)
+                self.modo_3d.blockSignals(False)
+                CFG["modo_3d"] = False
+                save_cfg(CFG)
+                shutil.rmtree(ANIM_3D_DIR, ignore_errors=True)
+                self.manager.apply_modo_3d()
+                self.atualizar_ui_3d()
+                QMessageBox.information(self, tr("Pacote 3D"), tr("Pacote 3D removido com sucesso.\nO Jimmy voltou para o visual clássico 2D!"))
+        else:
+            self.iniciar_instalacao_3d()
+
+    def iniciar_instalacao_3d(self):
+        locais = [
+            os.path.join(RES_DIR, "pacote_3d.zip"),
+            os.path.join(os.path.dirname(os.path.abspath(sys.executable if getattr(sys, "frozen", False) else globals().get("__file__", ""))), "pacote_3d.zip"),
+            os.path.join(os.path.dirname(os.path.abspath(sys.executable if getattr(sys, "frozen", False) else globals().get("__file__", ""))), "dist", "pacote_3d.zip"),
+            os.path.join("C:" + os.sep, "Users", "everaldolima", "jimmy-neutron-pet", "dist", "pacote_3d.zip"),
+            os.path.join("C:" + os.sep, "Users", "everaldolima", "jimmy-neutron-pet", "assets", "pacote_3d.zip")
+        ]
+        local_zip = next((p for p in locais if os.path.isfile(p)), None)
+        if local_zip:
+            self.extrair_pacote_3d(local_zip)
+            return
+
+        url = CFG.get("pacote_3d_url") or "https://github.com/oevetech/-Jimmy_Neutron_Desktop_agent/releases/latest/download/pacote_3d.zip"
+        destino = os.path.join(DATA_DIR, "pacote_3d_temp.zip")
+        self.btn_pacote_3d.setEnabled(False)
+        self.btn_pacote_3d.setText("Baixando...")
+        self.progresso_3d.setValue(0)
+        self.progresso_3d.setVisible(True)
+
+        self.worker_3d = BaixadorPacote3D(url, destino)
+        self.worker_3d.progresso.connect(self.progresso_3d.setValue)
+        self.worker_3d.concluido.connect(self._on_download_3d_ok)
+        self.worker_3d.erro.connect(self._on_download_3d_erro)
+        self.worker_3d.start()
+
+    def _on_download_3d_ok(self, zip_path):
+        self.progresso_3d.setVisible(False)
+        self.extrair_pacote_3d(zip_path)
+        try: os.remove(zip_path)
+        except OSError: pass
+
+    def _on_download_3d_erro(self, msg):
+        self.progresso_3d.setVisible(False)
+        self.atualizar_ui_3d()
+        QMessageBox.warning(self, tr("Erro no Download"), tr(f"Não foi possível baixar o pacote 3D:\n{msg}"))
+
+    def extrair_pacote_3d(self, zip_path):
+        try:
+            os.makedirs(ANIM_3D_DIR, exist_ok=True)
+            with zipfile.ZipFile(zip_path, "r") as z:
+                z.extractall(ANIM_3D_DIR)
+            self.modo_3d.blockSignals(True)
+            self.modo_3d.setChecked(True)
+            self.modo_3d.blockSignals(False)
+            CFG["modo_3d"] = True
+            save_cfg(CFG)
+            self.manager.apply_modo_3d()
+            self.atualizar_ui_3d()
+            QMessageBox.information(self, tr("Pacote 3D Instalado"), tr("✨ Pacote 3D instalado com sucesso!\nO Jimmy agora está usando as novas animações 3D."))
+        except Exception as e:
+            log_error(e)
+            QMessageBox.warning(self, tr("Erro na Extração"), tr(f"Não foi possível extrair o pacote 3D:\n{e}"))
 
     def salvar_idioma(self, *_):
         CFG["idioma"] = self.idioma.currentData()
@@ -6702,6 +6882,11 @@ class TrayManager:
         # Novo tamanho: limpa os tamanhos calculados e recria os pets
         global ESCALA
         ESCALA = CFG["tamanho"] / 100
+        Pet.box_cache.clear()
+        self.restart_pets()
+
+    def apply_modo_3d(self):
+        Pet.anim_cache.clear()
         Pet.box_cache.clear()
         self.restart_pets()
 
